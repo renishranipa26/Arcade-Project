@@ -4,7 +4,7 @@ import json
 import csv
 import os
 
-PORT = 8000
+PORT = int(os.environ.get("PORT", 8000))
 
 CATEGORIES_CSV = 'categories.csv'
 PRODUCTS_CSV = 'products.csv'
