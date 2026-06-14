@@ -1,0 +1,782 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ARCED Ceramic - Admin Dashboard</title>
+  <meta name="description"
+    content="ARCED Ceramic admin control center. Manage products, categories, stock levels, and import inventory data.">
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            luxury: {
+              50: '#FCFAF9',
+              100: '#F7F4F2',
+              200: '#EDE9E6',
+              300: '#E0D9D5',
+              400: '#B0A29A',
+              500: '#8A7A72',
+              600: '#665750',
+              700: '#4A3D38',
+              800: '#2E2421',
+              900: '#1C1513',
+              accent: '#C41E1E',
+              accentLight: '#EF4444',
+              gold: '#D6B280',
+              goldLight: '#F5E6D3'
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Google Fonts & FontAwesome -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <!-- SheetJS CDN (For Excel .xlsx and .csv Import & Parsing) -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+  <!-- Shared Styles -->
+  <link rel="stylesheet" href="shared.css">
+</head>
+
+<body class="bg-luxury-100 text-luxury-900 min-h-screen flex flex-col selection:bg-luxury-accent selection:text-white">
+
+  <!-- NOTIFICATION SYSTEM -->
+  <div id="notification-container"
+    class="fixed top-6 right-6 z-[100] flex flex-col gap-3 max-w-sm w-full pointer-events-none"></div>
+
+  <!-- HEADER -->
+  <header class="sticky top-0 z-40 bg-luxury-900 text-white border-b border-luxury-800 shadow-xl transition-all-300">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-20">
+        <!-- Brand Logo & Title -->
+        <div class="flex items-center gap-3 cursor-pointer" onclick="switchDashTab('home')">
+          <svg class="w-10 h-10 drop-shadow-md" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M 50 10 L 15 80 L 32 80 L 36.7 66 L 50 66 L 50 56 L 40 56 L 50 32 Z" fill="#9C1414" />
+            <path d="M 50 10 L 85 80 L 68 80 L 63.3 66 L 50 66 L 50 56 L 60 56 L 50 32 Z" fill="#C41E1E" />
+          </svg>
+          <div class="leading-none">
+            <span class="text-2xl font-black tracking-tight text-white block uppercase font-display">ARCED</span>
+            <span
+              class="text-[9px] tracking-[0.3em] text-luxury-300 font-medium block uppercase mt-0.5 font-display">ceramic</span>
+          </div>
+        </div>
+
+        <!-- Header Actions -->
+        <div class="flex items-center gap-3">
+          <!-- Admin Badge -->
+          <div
+            class="bg-luxury-accent px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wider flex items-center gap-2 shadow-lg">
+            <i class="fa-solid fa-shield-halved"></i> <span>Admin Panel</span>
+          </div>
+
+          <!-- Mobile Hamburger -->
+          <button onclick="toggleMobileMenu()" class="lg:hidden text-luxury-300 hover:text-white p-2">
+            <i class="fa-solid fa-bars text-xl"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Mobile Navigation Drawer -->
+    <div id="mobile-menu" class="hidden lg:hidden bg-luxury-900 border-t border-luxury-800 px-4 py-4 space-y-2">
+      <button onclick="switchDashTab('home'); toggleMobileMenu();"
+        class="w-full text-left px-4 py-2.5 rounded-lg text-sm font-semibold tracking-wider text-white hover:bg-luxury-800 flex items-center gap-3">
+        <i class="fa-solid fa-house text-luxury-accent"></i> Overview Home
+      </button>
+      <button onclick="switchDashTab('categories'); toggleMobileMenu();"
+        class="w-full text-left px-4 py-2.5 rounded-lg text-sm font-semibold tracking-wider text-white hover:bg-luxury-800 flex items-center gap-3">
+        <i class="fa-solid fa-diagram-project text-luxury-accent"></i> Category Hierarchy
+      </button>
+      <button onclick="switchDashTab('products'); toggleMobileMenu();"
+        class="w-full text-left px-4 py-2.5 rounded-lg text-sm font-semibold tracking-wider text-white hover:bg-luxury-800 flex items-center gap-3">
+        <i class="fa-solid fa-boxes-stacked text-luxury-accent"></i> Product Catalog
+      </button>
+      <button onclick="switchDashTab('stock'); toggleMobileMenu();"
+        class="w-full text-left px-4 py-2.5 rounded-lg text-sm font-semibold tracking-wider text-white hover:bg-luxury-800 flex items-center gap-3">
+        <i class="fa-solid fa-cubes-stacked text-luxury-accent"></i> Stock Room
+      </button>
+      <button onclick="switchDashTab('import'); toggleMobileMenu();"
+        class="w-full text-left px-4 py-2.5 rounded-lg text-sm font-semibold tracking-wider text-white hover:bg-luxury-800 flex items-center gap-3">
+        <i class="fa-solid fa-file-excel text-luxury-accent"></i> Import Engine
+      </button>
+    </div>
+  </header>
+
+  <!-- ADMIN DASHBOARD PORTAL -->
+  <main class="flex-grow max-w-8xl w-full mx-auto p-4 sm:p-6 lg:p-8 flex flex-col lg:flex-row gap-8">
+
+    <!-- Admin Sidebar Menu -->
+    <aside
+      class="w-full lg:w-72 shrink-0 bg-luxury-900 text-white rounded-2xl p-6 shadow-xl flex flex-col justify-between border border-luxury-800">
+      <div class="space-y-6">
+        <div class="border-b border-luxury-800 pb-4">
+          <span class="text-[10px] font-bold tracking-widest uppercase text-luxury-400 font-display">Admin
+            Control</span>
+          <h2 class="text-lg font-black tracking-tight mt-0.5 font-display">Control Center</h2>
+        </div>
+
+        <nav class="space-y-1.5">
+          <button onclick="switchDashTab('home')" id="dash-tab-home"
+            class="w-full flex items-center gap-3.5 px-4 py-3 rounded-xl text-xs font-bold uppercase tracking-wider transition-all-300 hover:bg-luxury-800 bg-luxury-accent text-white">
+            <i class="fa-solid fa-house text-base w-5 text-center"></i> Overview Home
+          </button>
+          <button onclick="switchDashTab('categories')" id="dash-tab-categories"
+            class="w-full flex items-center gap-3.5 px-4 py-3 rounded-xl text-xs font-bold uppercase tracking-wider transition-all-300 hover:bg-luxury-800 text-luxury-400">
+            <i class="fa-solid fa-diagram-project text-base w-5 text-center"></i> Category Hierarchy
+          </button>
+          <button onclick="switchDashTab('products')" id="dash-tab-products"
+            class="w-full flex items-center gap-3.5 px-4 py-3 rounded-xl text-xs font-bold uppercase tracking-wider transition-all-300 hover:bg-luxury-800 text-luxury-400">
+            <i class="fa-solid fa-boxes-stacked text-base w-5 text-center"></i> Product Catalog
+          </button>
+          <button onclick="switchDashTab('stock')" id="dash-tab-stock"
+            class="w-full flex items-center gap-3.5 px-4 py-3 rounded-xl text-xs font-bold uppercase tracking-wider transition-all-300 hover:bg-luxury-800 text-luxury-400">
+            <i class="fa-solid fa-cubes-stacked text-base w-5 text-center"></i> Stock Room
+          </button>
+          <button onclick="switchDashTab('import')" id="dash-tab-import"
+            class="w-full flex items-center gap-3.5 px-4 py-3 rounded-xl text-xs font-bold uppercase tracking-wider transition-all-300 hover:bg-luxury-800 text-luxury-400">
+            <i class="fa-solid fa-file-excel text-base w-5 text-center"></i> Import Engine
+          </button>
+        </nav>
+      </div>
+
+      <div class="mt-8 pt-4 border-t border-luxury-800 text-center">
+        <span class="text-[9px] tracking-wider text-luxury-500 uppercase block">Enterprise Environment</span>
+        <span class="text-[10px] text-luxury-400 font-bold">V1.4.0 (Stable)</span>
+      </div>
+    </aside>
+
+    <!-- Admin Tab Screens -->
+    <div class="flex-grow flex flex-col gap-6">
+
+      <!-- ================= TAB: HOME / OVERVIEW ================= -->
+      <section id="dash-tabscreen-home" class="space-y-6">
+        <!-- STATS GRID -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
+
+          <div class="bg-white border border-luxury-200 rounded-2xl p-6 shadow-sm flex items-center justify-between">
+            <div>
+              <span class="text-xs font-bold uppercase tracking-widest text-luxury-400 block">Total Catalog Items</span>
+              <span id="stat-total-products" class="text-3xl font-extrabold text-luxury-900 mt-1 block">0</span>
+            </div>
+            <div class="bg-luxury-100 text-luxury-800 p-4 rounded-xl text-2xl">
+              <i class="fa-solid fa-cubes"></i>
+            </div>
+          </div>
+
+          <div class="bg-white border border-luxury-200 rounded-2xl p-6 shadow-sm flex items-center justify-between">
+            <div>
+              <span class="text-xs font-bold uppercase tracking-widest text-luxury-400 block">Unique Categories</span>
+              <span id="stat-total-categories" class="text-3xl font-extrabold text-luxury-900 mt-1 block">0</span>
+            </div>
+            <div class="bg-luxury-100 text-luxury-800 p-4 rounded-xl text-2xl">
+              <i class="fa-solid fa-tags"></i>
+            </div>
+          </div>
+
+          <div class="bg-white border border-luxury-200 rounded-2xl p-6 shadow-sm flex items-center justify-between">
+            <div>
+              <span class="text-xs font-bold uppercase tracking-widest text-luxury-400 block">Aggregated Stock</span>
+              <span id="stat-total-stock" class="text-3xl font-extrabold text-luxury-900 mt-1 block">0</span>
+            </div>
+            <div class="bg-luxury-100 text-luxury-800 p-4 rounded-xl text-2xl">
+              <i class="fa-solid fa-boxes-stacked"></i>
+            </div>
+          </div>
+
+          <div class="bg-white border border-luxury-200 rounded-2xl p-6 shadow-sm flex items-center justify-between">
+            <div>
+              <span class="text-xs font-bold uppercase tracking-widest text-luxury-400 block">Low Stock Alerts</span>
+              <span id="stat-low-stock" class="text-3xl font-extrabold text-red-600 mt-1 block">0</span>
+            </div>
+            <div class="bg-red-50 text-red-600 p-4 rounded-xl text-2xl border border-red-100">
+              <i class="fa-solid fa-triangle-exclamation animate-pulse"></i>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- QUICK SHORTCUTS & ABOUT -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div class="lg:col-span-2 bg-white border border-luxury-200 rounded-2xl p-6 shadow-sm">
+            <h3 class="text-lg font-bold text-luxury-900 border-b border-luxury-100 pb-3 mb-4 flex items-center gap-2">
+              <i class="fa-solid fa-wand-magic-sparkles text-luxury-accent"></i> Showroom Quick Operations
+            </h3>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <button onclick="openProductModal('add')"
+                class="p-4 border border-luxury-200 rounded-xl hover:border-luxury-accent hover:shadow-md transition-all-300 text-left flex flex-col justify-between h-32 group">
+                <i
+                  class="fa-solid fa-circle-plus text-xl text-luxury-accent group-hover:scale-110 transition-all-300"></i>
+                <div>
+                  <h4 class="font-bold text-xs uppercase tracking-wider text-luxury-800">Add Product</h4>
+                  <p class="text-[11px] text-luxury-400 mt-0.5">Register high-res custom product variants</p>
+                </div>
+              </button>
+              <button onclick="switchDashTab('categories')"
+                class="p-4 border border-luxury-200 rounded-xl hover:border-luxury-accent hover:shadow-md transition-all-300 text-left flex flex-col justify-between h-32 group">
+                <i
+                  class="fa-solid fa-folder-tree text-xl text-luxury-accent group-hover:scale-110 transition-all-300"></i>
+                <div>
+                  <h4 class="font-bold text-xs uppercase tracking-wider text-luxury-800">Manage Categories</h4>
+                  <p class="text-[11px] text-luxury-400 mt-0.5">Edit 3-level hierarchal structure</p>
+                </div>
+              </button>
+              <button onclick="switchDashTab('import')"
+                class="p-4 border border-luxury-200 rounded-xl hover:border-luxury-accent hover:shadow-md transition-all-300 text-left flex flex-col justify-between h-32 group">
+                <i
+                  class="fa-solid fa-file-arrow-up text-xl text-luxury-accent group-hover:scale-110 transition-all-300"></i>
+                <div>
+                  <h4 class="font-bold text-xs uppercase tracking-wider text-luxury-800">Excel Importer</h4>
+                  <p class="text-[11px] text-luxury-400 mt-0.5">Batch parse inventory data safely</p>
+                </div>
+              </button>
+            </div>
+          </div>
+
+          <div
+            class="bg-luxury-900 text-white rounded-2xl p-6 shadow-sm flex flex-col justify-between relative overflow-hidden">
+            <div class="absolute -right-10 -bottom-10 opacity-10 text-[10rem] pointer-events-none">
+              <i class="fa-solid fa-hotel"></i>
+            </div>
+            <div>
+              <span class="text-[10px] font-bold tracking-widest text-luxury-400 uppercase block mb-1">Company
+                Profile</span>
+              <h3 class="text-xl font-bold tracking-wider uppercase text-white mb-4">ARCED Ceramic</h3>
+
+              <ul class="space-y-3.5 text-xs text-luxury-300">
+                <li class="flex items-start gap-2.5">
+                  <i class="fa-solid fa-location-dot mt-0.5 text-luxury-accent"></i>
+                  <span>Showroom HQ, Trade Tower Complex, Sector-18, India</span>
+                </li>
+                <li class="flex items-center gap-2.5">
+                  <i class="fa-solid fa-phone text-luxury-accent"></i>
+                  <span>+91 98765 43210</span>
+                </li>
+                <li class="flex items-center gap-2.5">
+                  <i class="fa-solid fa-envelope text-luxury-accent"></i>
+                  <span>showroom@arcedceramic.com</span>
+                </li>
+              </ul>
+            </div>
+            <div class="mt-6 pt-4 border-t border-luxury-800 text-[11px] text-luxury-400 flex items-center gap-2">
+              <i class="fa-solid fa-building-circle-check text-luxury-accent"></i> Verified Showroom HQ Account
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= TAB: CATEGORY MANAGEMENT ================= -->
+      <section id="dash-tabscreen-categories" class="hidden space-y-6">
+        <div class="bg-white border border-luxury-200 rounded-2xl p-6 shadow-sm">
+          <div class="flex items-center justify-between border-b border-luxury-100 pb-4 mb-4">
+            <div>
+              <h3 class="text-lg font-bold text-luxury-900">Configure Category Architecture</h3>
+              <p class="text-xs text-luxury-400 mt-0.5">Control the structural three-level nesting layout directly.</p>
+            </div>
+            <button onclick="openCategoryModal()"
+              class="bg-luxury-accent hover:bg-luxury-accent/90 text-white text-xs font-bold uppercase tracking-wider px-4 py-2.5 rounded-lg flex items-center gap-2 transition-all-300">
+              <i class="fa-solid fa-plus"></i> Expand Hierarchy
+            </button>
+          </div>
+
+          <!-- Tree Visualizer -->
+          <div id="category-hierarchy-view"
+            class="space-y-4 p-4 bg-luxury-50 rounded-xl border border-luxury-100 max-h-[500px] overflow-y-auto">
+            <!-- Dynamically populated Category Tree Nodes -->
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= TAB: PRODUCT LISTING ================= -->
+      <section id="dash-tabscreen-products" class="hidden space-y-6">
+        <div class="bg-white border border-luxury-200 rounded-2xl p-6 shadow-sm">
+          <!-- Control Row -->
+          <div
+            class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-luxury-100 pb-4 mb-4">
+            <div>
+              <h3 class="text-lg font-bold text-luxury-900">Showroom Products Catalog</h3>
+              <p class="text-xs text-luxury-400 mt-0.5">Manage products and associate high resolution media files.</p>
+            </div>
+            <button onclick="openProductModal('add')"
+              class="bg-luxury-accent hover:bg-luxury-accent/90 text-white text-xs font-bold uppercase tracking-wider px-4 py-2.5 rounded-lg flex items-center gap-2 transition-all-300">
+              <i class="fa-solid fa-plus"></i> Register Product
+            </button>
+          </div>
+
+          <!-- Search & Filter Controls -->
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
+            <div class="relative">
+              <input type="text" id="admin-search-products" oninput="renderAdminProductsTable()"
+                placeholder="Filter by ID or Name..."
+                class="w-full bg-luxury-50 border border-luxury-200 rounded-lg px-3 py-2 pl-9 text-xs focus:outline-none focus:border-luxury-accent text-luxury-900">
+              <i class="fa-solid fa-search absolute left-3 top-3 text-luxury-400 text-xs"></i>
+            </div>
+            <div>
+              <select id="admin-filter-main-cat" onchange="renderAdminProductsTable()"
+                class="w-full bg-luxury-50 border border-luxury-200 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-luxury-accent text-luxury-700">
+                <option value="all">All Main Categories</option>
+                <!-- Rendered dynamically -->
+              </select>
+            </div>
+            <div class="flex items-center gap-2 text-xs font-medium text-luxury-500 self-center justify-end">
+              <span id="admin-product-count">0 product models found</span>
+            </div>
+          </div>
+
+          <!-- Products Table -->
+          <div class="overflow-x-auto rounded-xl border border-luxury-200 shadow-sm">
+            <table class="w-full text-left border-collapse">
+              <thead>
+                <tr
+                  class="bg-luxury-900 text-white text-[10px] uppercase font-bold tracking-widest border-b border-luxury-800">
+                  <th class="py-3 px-4">Media</th>
+                  <th class="py-3 px-4">Product ID</th>
+                  <th class="py-3 px-4">Name</th>
+                  <th class="py-3 px-4">Path Structure</th>
+                  <th class="py-3 px-4 text-center">Stock</th>
+                  <th class="py-3 px-4 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="admin-products-tbody" class="divide-y divide-luxury-200 text-xs text-luxury-700">
+                <!-- Dynamically populated product items -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= TAB: STOCK MANAGEMENT ================= -->
+      <section id="dash-tabscreen-stock" class="hidden space-y-6">
+        <div class="bg-white border border-luxury-200 rounded-2xl p-6 shadow-sm">
+          <div class="border-b border-luxury-100 pb-4 mb-4">
+            <h3 class="text-lg font-bold text-luxury-900">Real-Time Stock Room Control</h3>
+            <p class="text-xs text-luxury-400 mt-0.5">Perform immediate volume updates. Modifications sync live with the
+              customer catalog.</p>
+          </div>
+
+          <!-- Stock Grid List -->
+          <div class="overflow-x-auto rounded-xl border border-luxury-200 shadow-sm">
+            <table class="w-full text-left border-collapse">
+              <thead>
+                <tr
+                  class="bg-luxury-900 text-white text-[10px] uppercase font-bold tracking-widest border-b border-luxury-800">
+                  <th class="py-3 px-4">Product ID</th>
+                  <th class="py-3 px-4">Product Name</th>
+                  <th class="py-3 px-4 text-center">Stock Level Status</th>
+                  <th class="py-3 px-4 text-center w-52">Adjust Quantity</th>
+                  <th class="py-3 px-4 text-right">Timestamp Updated</th>
+                </tr>
+              </thead>
+              <tbody id="admin-stock-tbody" class="divide-y divide-luxury-200 text-xs text-luxury-700">
+                <!-- Dynamically populated stock adjustment rows -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= TAB: EXCEL IMPORT CENTER ================= -->
+      <section id="dash-tabscreen-import" class="hidden space-y-6">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+          <!-- Importer panel -->
+          <div
+            class="lg:col-span-2 bg-white border border-luxury-200 rounded-2xl p-6 shadow-sm flex flex-col justify-between">
+            <div>
+              <h3
+                class="text-lg font-bold text-luxury-900 border-b border-luxury-100 pb-3 mb-4 flex items-center gap-2">
+                <i class="fa-solid fa-file-excel text-green-600"></i> Import Engine
+              </h3>
+              <p class="text-xs text-luxury-500 mb-4">
+                Rapidly register products, build catalog hierarchies, and adjust stock quantities simultaneously. Drag
+                and drop your inventory worksheet below.
+              </p>
+
+              <!-- Drag Zone -->
+              <div id="drop-zone" ondragover="event.preventDefault(); this.classList.add('border-luxury-accent');"
+                ondragleave="this.classList.remove('border-luxury-accent');" ondrop="handleFileDrop(event)"
+                class="border-2 border-dashed border-luxury-300 hover:border-luxury-accent bg-luxury-50 hover:bg-white rounded-xl p-8 flex flex-col items-center justify-center text-center cursor-pointer transition-all-300">
+                <div class="bg-white p-4 rounded-full text-green-600 border border-luxury-200 shadow-sm text-2xl mb-3">
+                  <i class="fa-solid fa-cloud-arrow-up"></i>
+                </div>
+                <span class="text-xs font-bold uppercase tracking-wider text-luxury-800">Drag & Drop Worksheet
+                  here</span>
+                <span class="text-[10px] text-luxury-400 mt-1 uppercase">Supports .xlsx, .xls, .csv files</span>
+                <div class="mt-4">
+                  <input type="file" id="file-uploader" accept=".xlsx, .xls, .csv" onchange="handleFileSelect(event)"
+                    class="hidden">
+                  <label for="file-uploader"
+                    class="bg-luxury-900 hover:bg-luxury-800 text-white text-[10px] font-bold uppercase tracking-wider px-4 py-2 rounded-lg cursor-pointer transition-all-300">
+                    Select File
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            <!-- Download Template Button -->
+            <div class="mt-6 pt-4 border-t border-luxury-100 flex items-center justify-between">
+              <span class="text-[10px] text-luxury-400 font-bold uppercase tracking-wide">Missing the schema
+                structure?</span>
+              <button onclick="downloadExcelTemplate()"
+                class="text-xs font-bold tracking-wide uppercase text-luxury-accent hover:text-luxury-accent/80 flex items-center gap-2">
+                <i class="fa-solid fa-download"></i> Get Excel Template
+              </button>
+            </div>
+          </div>
+
+          <!-- Documentation & Quick Tips -->
+          <div
+            class="bg-luxury-900 text-white rounded-2xl p-6 shadow-sm border border-luxury-800 flex flex-col justify-between">
+            <div class="space-y-4">
+              <h3
+                class="text-base font-bold tracking-tight uppercase border-b border-luxury-800 pb-3 flex items-center gap-2">
+                <i class="fa-solid fa-circle-info text-luxury-accent"></i> Import Guidelines
+              </h3>
+              <p class="text-xs text-luxury-300 leading-relaxed">
+                Ensure your column headers match the specifications precisely. The importer automatically registers new
+                categories if they don't exist.
+              </p>
+              <ul class="space-y-2.5 text-[11px] text-luxury-400">
+                <li class="flex items-start gap-2">
+                  <i class="fa-solid fa-circle-check text-green-500 mt-0.5"></i>
+                  <span><strong>Product ID:</strong> Primary Key. Updates stock levels of existing records, or generates
+                    clean additions.</span>
+                </li>
+                <li class="flex items-start gap-2">
+                  <i class="fa-solid fa-circle-check text-green-500 mt-0.5"></i>
+                  <span><strong>Levels 1-3:</strong> Categories will map to hierarchical paths automatically.</span>
+                </li>
+                <li class="flex items-start gap-2">
+                  <i class="fa-solid fa-circle-check text-green-500 mt-0.5"></i>
+                  <span><strong>Stock Quantity:</strong> Integer value starting at 0. Negative levels flag custom
+                    limits.</span>
+                </li>
+              </ul>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Import Summary Log View -->
+        <div id="import-summary-container"
+          class="hidden bg-white border border-luxury-200 rounded-2xl p-6 shadow-sm space-y-4">
+          <div class="flex items-center justify-between border-b border-luxury-100 pb-3">
+            <h3 class="text-sm font-bold text-luxury-900 uppercase tracking-wider flex items-center gap-2">
+              <i class="fa-solid fa-magnifying-glass-chart text-luxury-accent"></i> Processing Evaluation Logs
+            </h3>
+            <div class="flex items-center gap-4 text-xs font-bold">
+              <span class="text-green-600"><span id="import-log-valid">0</span> Correct Entries</span>
+              <span class="text-red-500"><span id="import-log-invalid">0</span> Formatting Anomalies</span>
+            </div>
+          </div>
+
+          <!-- Summary Items -->
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <div class="bg-luxury-50 p-4 rounded-xl border border-luxury-100">
+              <span class="text-[10px] font-bold text-luxury-400 uppercase tracking-widest block">Filename</span>
+              <span id="import-meta-filename" class="text-xs font-bold text-luxury-800 truncate block mt-0.5">-</span>
+            </div>
+            <div class="bg-luxury-50 p-4 rounded-xl border border-luxury-100">
+              <span class="text-[10px] font-bold text-luxury-400 uppercase tracking-widest block">Category
+                Auto-Adds</span>
+              <span id="import-meta-new-cats" class="text-xs font-bold text-luxury-800 mt-0.5 block">0 Categories</span>
+            </div>
+            <div class="bg-luxury-50 p-4 rounded-xl border border-luxury-100">
+              <span class="text-[10px] font-bold text-luxury-400 uppercase tracking-widest block">Updates Found</span>
+              <span id="import-meta-updates" class="text-xs font-bold text-luxury-800 mt-0.5 block">0 Records</span>
+            </div>
+            <div class="bg-luxury-50 p-4 rounded-xl border border-luxury-100">
+              <span class="text-[10px] font-bold text-luxury-400 uppercase tracking-widest block">Insertions
+                Found</span>
+              <span id="import-meta-inserts" class="text-xs font-bold text-luxury-800 mt-0.5 block">0 Records</span>
+            </div>
+          </div>
+
+          <!-- Preview Table Area -->
+          <div class="overflow-x-auto rounded-xl border border-luxury-200">
+            <table class="w-full text-left border-collapse text-xs">
+              <thead>
+                <tr
+                  class="bg-luxury-100 text-luxury-700 font-bold uppercase text-[9px] tracking-wider border-b border-luxury-200">
+                  <th class="py-2.5 px-4">Row</th>
+                  <th class="py-2.5 px-4">Product ID</th>
+                  <th class="py-2.5 px-4">Product Name</th>
+                  <th class="py-2.5 px-4">Path Structures Map</th>
+                  <th class="py-2.5 px-4">Stock Value</th>
+                  <th class="py-2.5 px-4 text-center">Parse Analysis</th>
+                </tr>
+              </thead>
+              <tbody id="import-evaluation-tbody" class="divide-y divide-luxury-100 text-luxury-600">
+                <!-- Evaluation rows loaded here -->
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Run Execution Control -->
+          <div class="flex items-center justify-end gap-3 pt-4 border-t border-luxury-100">
+            <button onclick="cancelImport()"
+              class="bg-luxury-100 hover:bg-luxury-200 text-luxury-700 text-xs font-bold uppercase tracking-wider px-4 py-2.5 rounded-lg transition-all-300">
+              Discard Log
+            </button>
+            <button id="import-execute-btn" onclick="executeImportTransaction()"
+              class="bg-luxury-accent hover:bg-luxury-accent/90 text-white text-xs font-bold uppercase tracking-wider px-5 py-2.5 rounded-lg flex items-center gap-2 transition-all-300">
+              <i class="fa-solid fa-file-import"></i> Execute Transaction Import
+            </button>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <!-- ================= DIALOGS & MODAL STRUCTURES ================= -->
+
+  <!-- PRODUCT EDIT / ADD MODAL -->
+  <div id="product-modal"
+    class="hidden fixed inset-0 z-50 overflow-y-auto bg-luxury-900/65 backdrop-blur-sm flex items-center justify-center p-4">
+    <div
+      class="bg-white rounded-2xl border border-luxury-200 shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto transform scale-95 transition-all-300 duration-300 ease-out flex flex-col justify-between"
+      id="product-modal-card">
+
+      <!-- Modal Header -->
+      <div class="px-6 py-4 border-b border-luxury-100 flex items-center justify-between">
+        <h3 id="product-modal-title" class="text-base font-extrabold text-luxury-900 uppercase tracking-wider">Register
+          Premium Ceramic Model</h3>
+        <button onclick="closeProductModal()"
+          class="text-luxury-400 hover:text-luxury-900 transition-all-300 p-1.5 rounded-lg"><i
+            class="fa-solid fa-xmark text-lg"></i></button>
+      </div>
+
+      <!-- Modal Body -->
+      <div class="p-6 space-y-4 flex-grow">
+        <form id="product-form" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <!-- ID & Name -->
+          <div>
+            <label class="block text-[10px] font-bold uppercase tracking-wider text-luxury-500 mb-1">Product ID (Unique
+              Identifier) *</label>
+            <input type="text" id="form-product-id" required placeholder="e.g., T-1024"
+              class="w-full bg-luxury-50 border border-luxury-200 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-luxury-accent text-luxury-900">
+          </div>
+          <div>
+            <label class="block text-[10px] font-bold uppercase tracking-wider text-luxury-500 mb-1">Product Model Name
+              *</label>
+            <input type="text" id="form-product-name" required placeholder="e.g., Carrara Elite High Gloss"
+              class="w-full bg-luxury-50 border border-luxury-200 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-luxury-accent text-luxury-900">
+          </div>
+
+          <!-- Stock & Categories -->
+          <div>
+            <label class="block text-[10px] font-bold uppercase tracking-wider text-luxury-500 mb-1">Showroom Stock
+              Level *</label>
+            <input type="number" id="form-product-stock" required min="0" placeholder="0"
+              class="w-full bg-luxury-50 border border-luxury-200 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-luxury-accent text-luxury-900">
+          </div>
+          <div>
+            <label class="block text-[10px] font-bold uppercase tracking-wider text-luxury-500 mb-1">Main Category (L1)
+              *</label>
+            <select id="form-product-l1" required onchange="populateLevel2FormDropdown()"
+              class="w-full bg-luxury-50 border border-luxury-200 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-luxury-accent text-luxury-900">
+              <option value="">Select Level 1 Category</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-[10px] font-bold uppercase tracking-wider text-luxury-500 mb-1">Subcategory (L2)
+              *</label>
+            <select id="form-product-l2" required onchange="populateLevel3FormDropdown()"
+              class="w-full bg-luxury-50 border border-luxury-200 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-luxury-accent text-luxury-900">
+              <option value="">Select Level 2 Category</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-[10px] font-bold uppercase tracking-wider text-luxury-500 mb-1">Display
+              Specification (L3) *</label>
+            <select id="form-product-l3" required
+              class="w-full bg-luxury-50 border border-luxury-200 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-luxury-accent text-luxury-900">
+              <option value="">Select Level 3 Category</option>
+            </select>
+          </div>
+
+          <!-- Description -->
+          <div class="sm:col-span-2">
+            <label class="block text-[10px] font-bold uppercase tracking-wider text-luxury-500 mb-1">Product Description
+              & Specs</label>
+            <textarea id="form-product-desc" rows="2"
+              placeholder="e.g., Double charged vitrified tile with highly polished surface..."
+              class="w-full bg-luxury-50 border border-luxury-200 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-luxury-accent text-luxury-900"></textarea>
+          </div>
+        </form>
+
+        <!-- Media Segment (Multi image upload) -->
+        <div class="border-t border-luxury-100 pt-4">
+          <label class="block text-[10px] font-bold uppercase tracking-wider text-luxury-500 mb-1">Product Media
+            Portfolio (Multiple Uploads Allowed)</label>
+
+          <div class="flex items-center gap-3">
+            <input type="file" id="form-media-uploader" accept="image/*" multiple
+              onchange="handleModalImageUpload(event)" class="hidden">
+            <label for="form-media-uploader"
+              class="bg-luxury-900 hover:bg-luxury-800 text-white text-[10px] font-bold uppercase tracking-wider px-4 py-2 rounded-lg cursor-pointer flex items-center gap-2 transition-all-300">
+              <i class="fa-solid fa-images"></i> Select Images
+            </label>
+            <span class="text-[10px] text-luxury-400 uppercase">Supports JPEG, PNG</span>
+          </div>
+
+          <!-- Interactive Uploaded Grid View -->
+          <div id="modal-uploaded-thumbnails" class="grid grid-cols-4 gap-3 mt-3">
+            <!-- Dynamically populated thumbnails for active item images -->
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="px-6 py-4 border-t border-luxury-100 flex items-center justify-end gap-3">
+        <button onclick="closeProductModal()"
+          class="bg-luxury-100 hover:bg-luxury-200 text-luxury-700 text-xs font-bold uppercase tracking-wider px-4 py-2.5 rounded-lg transition-all-300">
+          Cancel
+        </button>
+        <button onclick="submitProductForm()"
+          class="bg-luxury-accent hover:bg-luxury-accent/90 text-white text-xs font-bold uppercase tracking-wider px-5 py-2.5 rounded-lg transition-all-300">
+          Commit Record
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- CATEGORY EXPANSION MODAL -->
+  <div id="category-modal"
+    class="hidden fixed inset-0 z-50 overflow-y-auto bg-luxury-900/65 backdrop-blur-sm flex items-center justify-center p-4">
+    <div
+      class="bg-white rounded-2xl border border-luxury-200 shadow-2xl max-w-md w-full transform scale-95 transition-all-300 duration-300 ease-out flex flex-col justify-between"
+      id="category-modal-card">
+
+      <div class="px-6 py-4 border-b border-luxury-100 flex items-center justify-between">
+        <h3 id="category-modal-title" class="text-base font-extrabold text-luxury-900 uppercase tracking-wider">Expand
+          Hierarchy Architecture</h3>
+        <button onclick="closeCategoryModal()"
+          class="text-luxury-400 hover:text-luxury-900 transition-all-300 p-1.5 rounded-lg"><i
+            class="fa-solid fa-xmark text-lg"></i></button>
+      </div>
+
+      <div class="p-6 space-y-4">
+        <form id="category-form" class="space-y-4">
+          <!-- Name of node -->
+          <div>
+            <label class="block text-[10px] font-bold uppercase tracking-wider text-luxury-500 mb-1">Category Title
+              *</label>
+            <input type="text" id="form-cat-name" required placeholder="e.g., 600x600, Tabletop Basin"
+              class="w-full bg-luxury-50 border border-luxury-200 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-luxury-accent text-luxury-900">
+          </div>
+
+          <!-- Type selection -->
+          <div>
+            <label class="block text-[10px] font-bold uppercase tracking-wider text-luxury-500 mb-1">Structure level
+              *</label>
+            <select id="form-cat-level" required onchange="adjustCategoryModalParentOptions()"
+              class="w-full bg-luxury-50 border border-luxury-200 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-luxury-accent text-luxury-900">
+              <option value="1">Main Category (L1)</option>
+              <option value="2">Subcategory (L2)</option>
+              <option value="3">Specification Node (L3)</option>
+            </select>
+          </div>
+
+          <!-- Dynamic Parent Dropdown -->
+          <div id="form-cat-parent-container" class="hidden">
+            <label id="form-cat-parent-label"
+              class="block text-[10px] font-bold uppercase tracking-wider text-luxury-500 mb-1">Associating Structural
+              Parent *</label>
+            <select id="form-cat-parent"
+              class="w-full bg-luxury-50 border border-luxury-200 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-luxury-accent text-luxury-900">
+              <!-- Dynamically populated -->
+            </select>
+          </div>
+        </form>
+      </div>
+
+      <div class="px-6 py-4 border-t border-luxury-100 flex items-center justify-end gap-3">
+        <button onclick="closeCategoryModal()"
+          class="bg-luxury-100 hover:bg-luxury-200 text-luxury-700 text-xs font-bold uppercase tracking-wider px-4 py-2.5 rounded-lg transition-all-300">
+          Cancel
+        </button>
+        <button onclick="submitCategoryForm()"
+          class="bg-luxury-accent hover:bg-luxury-accent/90 text-white text-xs font-bold uppercase tracking-wider px-5 py-2.5 rounded-lg transition-all-300">
+          Link Category Node
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <footer class="bg-luxury-900 border-t border-luxury-800 py-12 mt-auto text-white">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+
+        <div class="md:col-span-2 space-y-4">
+          <div class="flex items-center gap-3">
+            <svg class="w-8 h-8 drop-shadow-md" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M 50 10 L 15 80 L 32 80 L 36.7 66 L 50 66 L 50 56 L 40 56 L 50 32 Z" fill="#9C1414" />
+              <path d="M 50 10 L 85 80 L 68 80 L 63.3 66 L 50 66 L 50 56 L 60 56 L 50 32 Z" fill="#C41E1E" />
+            </svg>
+            <div class="leading-none">
+              <span class="text-xl font-black tracking-tight text-white block uppercase font-display">ARCED</span>
+              <span
+                class="text-[8px] tracking-[0.3em] text-luxury-300 font-medium block uppercase mt-0.5 font-display">ceramic</span>
+            </div>
+          </div>
+          <p class="text-xs text-luxury-400 max-w-sm leading-relaxed">
+            Pioneering excellence in high-end tile styles, bespoke sanitary ware fixtures, and signature faucets.
+            Crafting luxurious environments.
+          </p>
+        </div>
+
+        <div>
+          <h4 class="text-xs font-bold uppercase tracking-widest text-luxury-400 mb-4">Navigational Paths</h4>
+          <ul class="space-y-2 text-xs">
+            <li><a href="index.html" class="text-luxury-300 hover:text-luxury-accent transition-all-300">Luxury
+                Showroom</a></li>
+            <li><a href="#" onclick="switchDashTab('home')"
+                class="text-luxury-300 hover:text-luxury-accent transition-all-300">Management Panel</a></li>
+            <li><a href="#" onclick="switchDashTab('import')"
+                class="text-luxury-300 hover:text-luxury-accent transition-all-300">Database Importers</a></li>
+          </ul>
+        </div>
+
+        <div>
+          <h4 class="text-xs font-bold uppercase tracking-widest text-luxury-400 mb-4">Corporate Office</h4>
+          <ul class="space-y-2 text-xs text-luxury-300">
+            <li class="flex items-start gap-2">
+              <i class="fa-solid fa-map-location-dot mt-0.5 text-luxury-accent"></i>
+              <span>HQ complex, Sector-18, New Delhi, India</span>
+            </li>
+            <li class="flex items-center gap-2">
+              <i class="fa-solid fa-phone text-luxury-accent"></i>
+              <span>+91 98765 43210</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+  </footer>
+
+  <!-- Scripts -->
+  <script src="shared-data.js"></script>
+  <script src="admin.js"></script>
+</body>
+
+</html>

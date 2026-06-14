@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ARCED Ceramic - Premium Showroom Catalog</title>
+  <meta name="description"
+    content="Explore the premium ARCED Ceramic showroom catalog. Browse luxury tiles, sanitary ware, and designer faucets.">
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            luxury: {
+              50: '#FCFAF9',
+              100: '#F7F4F2',
+              200: '#EDE9E6',
+              300: '#E0D9D5',
+              400: '#B0A29A',
+              500: '#8A7A72',
+              600: '#665750',
+              700: '#4A3D38',
+              800: '#2E2421',
+              900: '#1C1513',
+              accent: '#C41E1E',
+              accentLight: '#EF4444',
+              gold: '#D6B280',
+              goldLight: '#F5E6D3'
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Google Fonts & FontAwesome -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <!-- Shared Styles -->
+  <link rel="stylesheet" href="shared.css">
+</head>
+
+<body class="bg-luxury-100 text-luxury-900 min-h-screen flex flex-col selection:bg-luxury-accent selection:text-white">
+
+  <!-- NOTIFICATION SYSTEM -->
+  <div id="notification-container"
+    class="fixed top-6 right-6 z-[100] flex flex-col gap-3 max-w-sm w-full pointer-events-none"></div>
+
+  <!-- HEADER -->
+  <header class="sticky top-0 z-40 bg-luxury-900 text-white border-b border-luxury-800 shadow-xl transition-all-300">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-20">
+        <!-- Brand Logo & Title -->
+        <div class="flex items-center gap-3 cursor-pointer" onclick="resetCategoryFilters()">
+          <svg class="w-10 h-10 drop-shadow-md" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M 50 10 L 15 80 L 32 80 L 36.7 66 L 50 66 L 50 56 L 40 56 L 50 32 Z" fill="#9C1414" />
+            <path d="M 50 10 L 85 80 L 68 80 L 63.3 66 L 50 66 L 50 56 L 60 56 L 50 32 Z" fill="#C41E1E" />
+          </svg>
+          <div class="leading-none">
+            <span class="text-2xl font-black tracking-tight text-white block uppercase font-display">ARCED</span>
+            <span
+              class="text-[9px] tracking-[0.3em] text-luxury-300 font-medium block uppercase mt-0.5 font-display">ceramic</span>
+          </div>
+        </div>
+
+        <!-- Header Actions -->
+        <div class="flex items-center gap-3">
+          <!-- Search -->
+          <div class="relative hidden sm:block w-64">
+            <input type="text" id="global-search" oninput="handleGlobalSearch(this.value)"
+              placeholder="Search by Product ID..."
+              class="w-full bg-luxury-800/80 border border-luxury-700 rounded-full px-4 py-1.5 pl-10 text-xs focus:outline-none focus:border-luxury-accent text-luxury-100 transition-all-300 placeholder-luxury-400">
+            <i class="fa-solid fa-search absolute left-3.5 top-2.5 text-luxury-400 text-xs"></i>
+            <button id="clear-search-btn" onclick="clearGlobalSearch()"
+              class="hidden absolute right-3.5 top-2 text-luxury-400 hover:text-white"><i
+                class="fa-solid fa-circle-xmark"></i></button>
+          </div>
+
+          <!-- Customer Badge
+          <div
+            class="bg-luxury-800 px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wider flex items-center gap-2 border border-luxury-700">
+            <i class="fa-solid fa-user text-luxury-accent"></i> <span>Customer</span>
+          </div> -->
+
+          <!-- Mobile Hamburger -->
+          <button onclick="toggleMobileMenu()" class="md:hidden text-luxury-300 hover:text-white p-2">
+            <i class="fa-solid fa-bars text-xl"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Mobile Search Drawer -->
+    <div id="mobile-menu" class="hidden md:hidden bg-luxury-900 border-t border-luxury-800 px-4 py-4 space-y-3">
+      <div class="relative w-full mb-3">
+        <input type="text" id="mobile-global-search" oninput="handleGlobalSearch(this.value)"
+          placeholder="Search by ID or name..."
+          class="w-full bg-luxury-800 border border-luxury-700 rounded-lg px-4 py-2 pl-10 text-xs focus:outline-none focus:border-luxury-accent text-luxury-100">
+        <i class="fa-solid fa-search absolute left-3.5 top-3 text-luxury-400 text-xs"></i>
+      </div>
+    </div>
+  </header>
+
+  <!-- CUSTOMER SHOWROOM CATALOG -->
+  <main id="view-showroom" class="flex-grow flex flex-col md:flex-row max-w-8xl w-full mx-auto p-4 sm:p-6 lg:p-8 gap-8">
+
+    <!-- Left Sidebar: 3-Level Expandable Category Tree -->
+    <aside class="w-full md:w-80 shrink-0 bg-white border border-luxury-200 rounded-2xl p-6 shadow-sm self-start">
+      <div class="flex items-center justify-between pb-4 mb-4 border-b border-luxury-100">
+        <h2 class="font-bold text-luxury-800 uppercase tracking-wider text-sm flex items-center gap-2">
+          <i class="fa-solid fa-sliders text-luxury-accent"></i> Filters & Categories
+        </h2>
+        <button onclick="resetCategoryFilters()"
+          class="text-xs text-luxury-500 hover:text-luxury-accent flex items-center gap-1 transition-all-300">
+          <i class="fa-solid fa-arrow-rotate-left"></i> Reset
+        </button>
+      </div>
+
+      <!-- Main Category Tabs -->
+      <div class="space-y-4">
+        <span class="text-[11px] font-bold tracking-widest text-luxury-400 uppercase">Browse Collections</span>
+
+        <!-- Accordion container -->
+        <div id="showroom-category-accordion" class="space-y-2">
+          <!-- Populated dynamically via JS -->
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content Area: Search, Breadcrumbs, Product Grid -->
+    <section class="flex-grow flex flex-col gap-6">
+
+      <!-- Showroom Header, Active Category Breadcrumb, Statistics -->
+      <div
+        class="bg-white border border-luxury-200 rounded-2xl p-6 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div>
+          <div class="flex items-center gap-2 text-xs text-luxury-400 font-medium mb-1">
+            <span class="hover:text-luxury-accent cursor-pointer" onclick="resetCategoryFilters()">Showroom</span>
+            <span id="breadcrumb-trail">/ All Products</span>
+          </div>
+          <h1 id="showroom-title" class="text-2xl font-black text-luxury-900 tracking-tight font-display">Signature
+            Collection
+          </h1>
+        </div>
+        <div class="flex items-center gap-4 text-xs font-semibold uppercase tracking-wider text-luxury-500">
+          <span class="bg-luxury-100 px-3 py-1.5 rounded-lg border border-luxury-200"><span id="showroom-count"
+              class="text-luxury-accent font-bold">0</span> Products Found</span>
+        </div>
+      </div>
+
+      <!-- Alert search status if search active -->
+      <div id="search-status-bar"
+        class="hidden bg-luxury-900 text-white px-5 py-3.5 rounded-xl flex items-center justify-between shadow-md">
+        <div class="flex items-center gap-2.5 text-xs">
+          <span class="animate-ping h-2 w-2 rounded-full bg-luxury-accentLight inline-block"></span>
+          <span>Showing results matching ID: <strong id="search-query-highlight"
+              class="text-luxury-accentLight"></strong></span>
+        </div>
+        <button onclick="clearGlobalSearch()"
+          class="text-xs font-bold uppercase tracking-widest hover:text-luxury-accentLight flex items-center gap-1">
+          Clear Search <i class="fa-solid fa-circle-xmark"></i>
+        </button>
+      </div>
+
+      <!-- Product Showcase Grid -->
+      <div id="showroom-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <!-- Rendered dynamically -->
+      </div>
+
+      <!-- Empty State -->
+      <div id="showroom-empty-state"
+        class="hidden flex-col items-center justify-center py-20 bg-white border border-luxury-200 rounded-2xl text-center shadow-inner">
+        <div class="bg-luxury-100 p-6 rounded-full text-luxury-400 mb-4 text-3xl">
+          <i class="fa-solid fa-layer-group"></i>
+        </div>
+        <h3 class="text-lg font-bold text-luxury-800">No Premium Models Match</h3>
+        <p class="text-sm text-luxury-400 mt-1 max-w-sm">Adjust your filters or check back later for exciting new
+          products.</p>
+      </div>
+    </section>
+  </main>
+
+  <!-- PRODUCT SPECIFICATION SHOWROOM MODAL -->
+  <div id="showroom-modal"
+    class="hidden fixed inset-0 z-50 overflow-y-auto bg-luxury-900/65 backdrop-blur-sm flex items-center justify-center p-4">
+    <div
+      class="bg-white rounded-3xl border border-luxury-200 shadow-2xl max-w-4xl w-full max-h-[95vh] overflow-y-auto transform scale-95 transition-all-300 duration-300 ease-out flex flex-col justify-between"
+      id="showroom-modal-card">
+
+      <!-- Top actions -->
+      <div class="px-6 py-4 border-b border-luxury-100 flex items-center justify-between">
+        <span class="text-[10px] font-bold tracking-widest uppercase text-luxury-accent flex items-center gap-1">
+          <i class="fa-solid fa-award"></i> Arcade Ceramic Collection
+        </span>
+        <button onclick="closeShowroomModal()"
+          class="text-luxury-400 hover:text-luxury-900 transition-all-300 p-1.5 rounded-lg"><i
+            class="fa-solid fa-xmark text-lg"></i></button>
+      </div>
+
+      <!-- Container -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 p-6 md:p-8">
+
+        <!-- Left column: Massive Image Slider and Thumbnails -->
+        <div class="space-y-4">
+          <div
+            class="relative bg-luxury-100 rounded-2xl overflow-hidden aspect-square border border-luxury-200 shadow-inner flex items-center justify-center">
+            <img id="showroom-modal-main-img" src="" alt="Main Preview"
+              class="w-full h-full object-cover transition-all-300 duration-500">
+
+            <!-- Quick status pill overlay -->
+            <div id="showroom-modal-stock-badge"
+              class="absolute top-4 left-4 px-3 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-widest shadow-md">
+              <!-- Load dynamic stock details -->
+            </div>
+          </div>
+
+          <!-- Thumbnail Slider Row -->
+          <div id="showroom-modal-thumbnail-row" class="flex gap-2 overflow-x-auto pb-2 no-scrollbar">
+            <!-- Loaded dynamically -->
+          </div>
+        </div>
+
+        <!-- Right column: Premium Information details -->
+        <div class="flex flex-col justify-between">
+          <div class="space-y-5">
+            <div>
+              <span id="showroom-modal-breadcrumbs"
+                class="text-[10px] font-bold uppercase tracking-wider text-luxury-400">Category > Path</span>
+              <h2 id="showroom-modal-title"
+                class="text-2xl font-black text-luxury-900 tracking-tight mt-1 font-display">Premium
+                Product Title</h2>
+              <span id="showroom-modal-product-id"
+                class="inline-block mt-1.5 px-2.5 py-1 bg-luxury-100 text-luxury-800 text-[10px] font-bold uppercase tracking-widest rounded border border-luxury-200">ID:
+                T-1021</span>
+            </div>
+
+            <div class="border-t border-b border-luxury-100 py-4">
+              <span class="text-[10px] font-bold uppercase tracking-wider text-luxury-400 block mb-1">Architectural
+                Specs & Description</span>
+              <p id="showroom-modal-desc" class="text-xs text-luxury-600 leading-relaxed">No custom specification
+                details provided.</p>
+            </div>
+
+            <div>
+              <span class="text-[10px] font-bold uppercase tracking-wider text-luxury-400 block mb-2">Available Showroom
+                Quantity</span>
+              <div class="flex items-center gap-3">
+                <span id="showroom-modal-stock" class="text-3xl font-black text-luxury-900">142</span>
+                <span class="text-xs text-luxury-400 uppercase tracking-widest">Units Instock</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Actions segment -->
+          <div class="pt-6 mt-6 border-t border-luxury-100 space-y-3">
+            <button onclick="copyInquiryDetails()"
+              class="w-full bg-luxury-900 hover:bg-luxury-800 text-white text-xs font-bold uppercase tracking-wider py-3.5 rounded-xl flex items-center justify-center gap-2 transition-all-300 shadow-md border border-luxury-800 hover:border-luxury-gold/30">
+              <i class="fa-solid fa-envelope-open-text text-luxury-gold"></i> Copy Inquiry Details
+            </button>
+            <div
+              class="flex items-center justify-between text-[10px] text-luxury-400 uppercase tracking-wider font-bold">
+              <span>Standard Showroom Logistics Apply</span>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <footer class="bg-luxury-900 border-t border-luxury-800 py-12 mt-auto text-white">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+
+        <div class="md:col-span-2 space-y-4">
+          <div class="flex items-center gap-3">
+            <svg class="w-8 h-8 drop-shadow-md" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M 50 10 L 15 80 L 32 80 L 36.7 66 L 50 66 L 50 56 L 40 56 L 50 32 Z" fill="#9C1414" />
+              <path d="M 50 10 L 85 80 L 68 80 L 63.3 66 L 50 66 L 50 56 L 60 56 L 50 32 Z" fill="#C41E1E" />
+            </svg>
+            <div class="leading-none">
+              <span class="text-xl font-black tracking-tight text-white block uppercase font-display">ARCED</span>
+              <span
+                class="text-[8px] tracking-[0.3em] text-luxury-300 font-medium block uppercase mt-0.5 font-display">ceramic</span>
+            </div>
+          </div>
+          <p class="text-xs text-luxury-400 max-w-sm leading-relaxed">
+            Pioneering excellence in high-end tile styles, bespoke sanitary ware fixtures, and signature faucets.
+            Crafting luxurious environments with ARCED Ceramic.
+          </p>
+        </div>
+
+        <div>
+          <h4 class="text-xs font-bold uppercase tracking-widest text-luxury-400 mb-4">Navigational Paths</h4>
+          <ul class="space-y-2 text-xs">
+            <li><a href="#" onclick="resetCategoryFilters()"
+                class="text-luxury-300 hover:text-luxury-accent transition-all-300">Google Map</a></li>
+          </ul>
+        </div>
+
+        <div>
+          <h4 class="text-xs font-bold uppercase tracking-widest text-luxury-400 mb-4">Address</h4>
+          <ul class="space-y-2 text-xs text-luxury-300">
+            <li class="flex items-start gap-2">
+              <i class="fa-solid fa-map-location-dot mt-0.5 text-luxury-accent"></i>
+              <span>Arcade ceramic, Jambhulwadi, Pune-Mumbai Highway, Pune, Maharashtra</span>
+            </li>
+            <li class="flex items-center gap-2">
+              <i class="fa-solid fa-phone text-luxury-accent"></i>
+              <span>+91 95459 61848</span>
+            </li>
+          </ul>
+        </div>
+
+      </div>
+      <!-- <div
+        class="border-t border-luxury-800 mt-8 pt-8 flex flex-col sm:flex-row items-center justify-between text-xs text-luxury-500">
+        <p>&copy; 2026 ARCED Ceramic Ltd. All Architectural Rights Reserved.</p>
+        <p class="flex items-center gap-1.5 mt-2 sm:mt-0">
+          Built securely with <i class="fa-solid fa-shield text-luxury-accent"></i> and LocalStorage data binding.
+        </p>
+      </div> -->
+    </div>
+  </footer>
+
+  <!-- Scripts -->
+  <script src="shared-data.js"></script>
+  <script src="index.js"></script>
+</body>
+
+</html>
