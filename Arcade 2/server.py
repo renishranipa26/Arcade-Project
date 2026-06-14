@@ -1,8 +1,9 @@
-import http.server
-import socketserver
-import json
-import csv
+from flask import Flask, jsonify, request, send_from_directory
 import os
+import csv
+import json
+
+app = Flask(__name__, static_folder='.', static_url_path='')
 
 PORT = int(os.environ.get("PORT", 8000))
 
@@ -172,81 +173,61 @@ if not os.path.exists(CATEGORIES_CSV):
 if not os.path.exists(PRODUCTS_CSV):
     save_products(SEED_PRODUCTS)
 
-class DatabaseHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
-    def end_headers(self):
-        self.send_header('Access-Control-Allow-Origin', '*')
-        self.send_header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
-        self.send_header('Access-Control-Allow-Headers', 'Content-Type')
-        super().end_headers()
+@app.route('/')
+def index_route():
+    return send_from_directory('.', 'index.html')
 
-    def do_OPTIONS(self):
-        self.send_response(200)
-        self.end_headers()
+@app.route('/admin.html')
+def admin_route():
+    return send_from_directory('.', 'admin.html')
 
-    def do_GET(self):
-        if self.path == '/api/categories':
-            self.send_response(200)
-            self.send_header('Content-Type', 'application/json')
-            self.end_headers()
-            categories = load_categories()
-            if categories is None:
-                categories = SEED_CATEGORIES
-                save_categories(categories)
-            self.wfile.write(json.dumps(categories).encode('utf-8'))
-        elif self.path == '/api/products':
-            self.send_response(200)
-            self.send_header('Content-Type', 'application/json')
-            self.end_headers()
-            products = load_products()
-            if products is None:
-                products = SEED_PRODUCTS
-                save_products(products)
-            self.wfile.write(json.dumps(products).encode('utf-8'))
-        else:
-            super().do_GET()
+@app.route('/api/categories', methods=['GET', 'POST', 'OPTIONS'])
+def categories_api():
+    if request.method == 'OPTIONS':
+        return '', 200
+    if request.method == 'GET':
+        categories = load_categories()
+        if categories is None:
+            categories = SEED_CATEGORIES
+            save_categories(categories)
+        return jsonify(categories)
+    elif request.method == 'POST':
+        try:
+            categories = request.get_json()
+            save_categories(categories)
+            return jsonify({'status': 'success'})
+        except Exception as e:
+            return jsonify({'status': 'error', 'message': str(e)}), 400
 
-    def do_POST(self):
-        if self.path == '/api/categories':
-            content_length = int(self.headers['Content-Length'])
-            post_data = self.rfile.read(content_length)
-            try:
-                categories = json.loads(post_data.decode('utf-8'))
-                save_categories(categories)
-                self.send_response(200)
-                self.send_header('Content-Type', 'application/json')
-                self.end_headers()
-                self.wfile.write(json.dumps({'status': 'success'}).encode('utf-8'))
-            except Exception as e:
-                self.send_response(400)
-                self.send_header('Content-Type', 'application/json')
-                self.end_headers()
-                self.wfile.write(json.dumps({'status': 'error', 'message': str(e)}).encode('utf-8'))
-        elif self.path == '/api/products':
-            content_length = int(self.headers['Content-Length'])
-            post_data = self.rfile.read(content_length)
-            try:
-                products = json.loads(post_data.decode('utf-8'))
-                save_products(products)
-                self.send_response(200)
-                self.send_header('Content-Type', 'application/json')
-                self.end_headers()
-                self.wfile.write(json.dumps({'status': 'success'}).encode('utf-8'))
-            except Exception as e:
-                self.send_response(400)
-                self.send_header('Content-Type', 'application/json')
-                self.end_headers()
-                self.wfile.write(json.dumps({'status': 'error', 'message': str(e)}).encode('utf-8'))
-        else:
-            self.send_response(404)
-            self.end_headers()
+@app.route('/api/products', methods=['GET', 'POST', 'OPTIONS'])
+def products_api():
+    if request.method == 'OPTIONS':
+        return '', 200
+    if request.method == 'GET':
+        products = load_products()
+        if products is None:
+            products = SEED_PRODUCTS
+            save_products(products)
+        return jsonify(products)
+    elif request.method == 'POST':
+        try:
+            products = request.get_json()
+            save_products(products)
+            return jsonify({'status': 'success'})
+        except Exception as e:
+            return jsonify({'status': 'error', 'message': str(e)}), 400
+
+@app.route('/<path:path>')
+def serve_static_files(path):
+    return send_from_directory('.', path)
+
+@app.after_request
+def add_cors_headers(response):
+    response.headers['Access-Control-Allow-Origin'] = '*'
+    response.headers['Access-Control-Allow-Methods'] = 'GET, POST, OPTIONS'
+    response.headers['Access-Control-Allow-Headers'] = 'Content-Type'
+    return response
 
 if __name__ == '__main__':
-    # Use ThreadingTCPServer or socketserver.TCPServer
-    # Allow address reuse to prevent "address already in use" errors on restart
-    socketserver.TCPServer.allow_reuse_address = True
-    with socketserver.TCPServer(("", PORT), DatabaseHTTPRequestHandler) as httpd:
-        print(f"Serving HTTP on port {PORT} (http://127.0.0.1:{PORT}) ...")
-        try:
-            httpd.serve_forever()
-        except KeyboardInterrupt:
-            print("\nShutting down server.")
+    print(f"Starting Flask server on port {PORT}...")
+    app.run(host="0.0.0.0", port=PORT, debug=False)
