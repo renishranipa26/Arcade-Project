@@ -1,0 +1,17 @@
+id,name,level,parentId
+cat-l1-tiles,Tiles,1,
+cat-l1-sanitary,Sanitary,1,
+cat-l1-faucet,Faucet,1,
+cat-l2-floor-tiles,Floor Tiles,2,cat-l1-tiles
+cat-l2-wall-tiles,Wall Tiles,2,cat-l1-tiles
+cat-l2-closets,Water Closets,2,cat-l1-sanitary
+cat-l2-basins,Wash Basins,2,cat-l1-sanitary
+cat-l2-mixers,Premium Mixers,2,cat-l1-faucet
+cat-l2-showers,Shower Systems,2,cat-l1-faucet
+cat-l3-tiles-600,600x600,3,cat-l2-floor-tiles
+cat-l3-tiles-800,800x800,3,cat-l2-floor-tiles
+cat-l3-tiles-wall-300,300x600,3,cat-l2-wall-tiles
+cat-l3-closets-onepiece,One-Piece Closets,3,cat-l2-closets
+cat-l3-basins-tabletop,Tabletop Basins,3,cat-l2-basins
+cat-l3-mixers-basin,Basin Mixers,3,cat-l2-mixers
+cat-l3-showers-rain,Rain Shower Panels,3,cat-l2-showers
