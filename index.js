@@ -286,7 +286,7 @@ function renderShowroomProducts() {
     if (outOfStock) {
       badgeHtml = `<span class="absolute top-3 left-3 bg-red-600 text-white text-[9px] font-black uppercase tracking-wider px-2 py-1 rounded shadow">Out of stock</span>`;
     } else if (lowStock) {
-      badgeHtml = `<span class="absolute top-3 left-3 text-white text-[9px] font-black uppercase tracking-wider px-2 py-1">${prod.stock}</span>`;
+      badgeHtml = `<span class="absolute top-3 left-3 text-white text-[9px] font-black uppercase tracking-wider px-2 py-1"></span>`;
     } else {
       badgeHtml = `<span class="absolute top-3 left-3 text-white text-[9px] font-black uppercase tracking-wider px-2 py-1"></span>`;
     }
