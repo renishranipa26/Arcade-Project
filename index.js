@@ -416,18 +416,18 @@ function openShowroomModal(pId) {
   const firstImg = (prod.images && prod.images.length > 0) ? prod.images[0] : SVG_TILES_1;
   mainImgElement.src = firstImg;
 
-  // Stock badge
-  const badge = document.getElementById('showroom-modal-stock-badge');
-  if (prod.stock === 0) {
-    badge.className = "absolute top-4 left-4 px-3 py-1.5 rounded-xl text-[10px] font-extrabold uppercase tracking-widest shadow-md bg-red-600 text-white";
-    badge.innerText = "Sold Out";
-  } else if (prod.stock <= 15) {
-    badge.className = "absolute top-4 left-4 px-3 py-1.5 rounded-xl text-[10px] font-extrabold uppercase tracking-widest shadow-md bg-amber-500 text-white animate-pulse";
-    badge.innerText = `Low Stock Warning: ${prod.stock} units`;
-  } else {
-    badge.className = "absolute top-4 left-4 px-3 py-1.5 rounded-xl text-[10px] font-extrabold uppercase tracking-widest shadow-md bg-green-600 text-white";
-    badge.innerText = "Premium Item Available";
-  }
+  // // Stock badge
+  // const badge = document.getElementById('showroom-modal-stock-badge');
+  // if (prod.stock === 0) {
+  //   badge.className = "absolute top-4 left-4 px-3 py-1.5 rounded-xl text-[10px] font-extrabold uppercase tracking-widest shadow-md bg-red-600 text-white";
+  //   // badge.innerText = "Out of stock";
+  // } else if (prod.stock <= 15) {
+  //   badge.className = "absolute top-4 left-4 px-3 py-1.5 rounded-xl text-[10px] font-extrabold uppercase tracking-widest shadow-md bg-amber-500 text-white animate-pulse";
+  //   // badge.innerText = `Low Stock Warning: ${prod.stock} units`;
+  // } else {
+  //   badge.className = "absolute top-4 left-4 px-3 py-1.5 rounded-xl text-[10px] font-extrabold uppercase tracking-widest shadow-md bg-green-600 text-white";
+  //   // badge.innerText = "Premium Item Available";
+  // }
 
   // Thumbnail list
   const thumbRow = document.getElementById('showroom-modal-thumbnail-row');
