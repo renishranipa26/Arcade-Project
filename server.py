@@ -185,13 +185,14 @@ def load_products():
                 'stockC': stockC,
                 'stockD': stockD,
                 'desc': row.get('desc', ''),
+                'link': row.get('link', ''),
                 'images': images
             })
     return products
 
 def save_products(products):
     with open(PRODUCTS_CSV, mode='w', encoding='utf-8', newline='') as f:
-        writer = csv.DictWriter(f, fieldnames=['productId', 'name', 'l1', 'l2', 'l3', 'stock', 'stockA', 'stockB', 'stockC', 'stockD', 'desc', 'images'])
+        writer = csv.DictWriter(f, fieldnames=['productId', 'name', 'l1', 'l2', 'l3', 'stock', 'stockA', 'stockB', 'stockC', 'stockD', 'desc', 'link', 'images'])
         writer.writeheader()
         for prod in products:
             stockA = int(prod.get('stockA', prod.get('stock', 0)))
@@ -210,6 +211,7 @@ def save_products(products):
                 'stockC': stockC,
                 'stockD': stockD,
                 'desc': prod.get('desc', ''),
+                'link': prod.get('link', ''),
                 'images': json.dumps(prod.get('images', []))
             })
 

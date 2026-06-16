@@ -298,6 +298,7 @@ function renderShowroomProducts() {
       <div class="relative overflow-hidden aspect-square bg-luxury-50 flex items-center justify-center cursor-pointer" onclick="openShowroomModal('${prod.productId}')">
         <img id="card-img-${prod.productId}" src="${mainImg}" alt="${prod.name}" class="w-full h-full object-cover group-hover:scale-105 transition-all-300 duration-500">
         ${badgeHtml}
+        ${prod.link ? `<a href="${prod.link}" target="_blank" onclick="event.stopPropagation()" class="absolute top-3 right-3 bg-white/90 hover:bg-white text-luxury-900 text-[10px] font-black uppercase tracking-wider px-2 py-1 rounded shadow-md z-10 transition-all flex items-center gap-1"><i class="fa-solid fa-arrows-rotate"></i> 360°</a>` : ''}
 
         <div class="absolute inset-0 bg-luxury-900/40 opacity-0 group-hover:opacity-100 transition-all-300 flex items-center justify-center">
           <span class="bg-white/95 text-luxury-900 text-xs font-bold uppercase tracking-wider px-4 py-2.5 rounded-xl shadow-lg flex items-center gap-1.5 transform translate-y-3 group-hover:translate-y-0 transition-all-300">
@@ -369,6 +370,26 @@ function openShowroomModal(pId) {
   document.getElementById('showroom-modal-title').innerText = prod.name;
   document.getElementById('showroom-modal-product-id').innerText = `ID: ${prod.productId}`;
   document.getElementById('showroom-modal-desc').innerText = prod.desc || "A flagship model offering unmatched durability, sleek lines, and modern aesthetics curated especially for designer environments.";
+  
+  let view360Btn = document.getElementById('showroom-modal-360-btn');
+  if (prod.link) {
+    if (!view360Btn) {
+      view360Btn = document.createElement('a');
+      view360Btn.id = 'showroom-modal-360-btn';
+      view360Btn.target = '_blank';
+      view360Btn.className = "w-full mt-3 bg-luxury-100 hover:bg-luxury-200 text-luxury-900 text-xs font-bold uppercase tracking-wider py-3.5 rounded-xl flex items-center justify-center gap-2 transition-all-300 shadow-sm border border-luxury-200";
+      view360Btn.innerHTML = '<i class="fa-solid fa-arrows-rotate text-luxury-accent"></i> View 360° Experience';
+      const actionsContainer = document.querySelector('.pt-6.mt-6.border-t.border-luxury-100.space-y-3');
+      if (actionsContainer) {
+        actionsContainer.insertBefore(view360Btn, actionsContainer.children[1]);
+      }
+    }
+    view360Btn.href = prod.link;
+    view360Btn.style.display = 'flex';
+  } else if (view360Btn) {
+    view360Btn.style.display = 'none';
+  }
+
   const stockContainer = document.getElementById('showroom-modal-stock');
   if (stockContainer) {
     const stockA = prod.stockA !== undefined ? prod.stockA : prod.stock;
@@ -377,27 +398,20 @@ function openShowroomModal(pId) {
     const stockD = prod.stockD !== undefined ? prod.stockD : 0;
 
     stockContainer.innerHTML = `
-      <div class="flex flex-col gap-2.5 bg-luxury-50 p-4 rounded-2xl border border-luxury-200 w-full shadow-sm">
-        <div class="flex items-center justify-between">
-          <span class="text-[10px] font-extrabold uppercase tracking-widest text-luxury-500">Aggregated Catalog Volume</span>
-          <span class="text-2xl font-black text-luxury-900">${prod.stock} Pcs</span>
+          <span class="text-[10px] font-extrabold uppercase tracking-widest text-luxury-500"></span>
+          <span class="text-2xl font-black text-luxury-900"></span>
         </div>
-        <div class="grid grid-cols-4 gap-2 pt-2.5 border-t border-luxury-200 text-center">
-          <div class="bg-white p-2 rounded-xl border border-luxury-100 flex flex-col gap-0.5 shadow-sm">
-            <span class="text-[9px] font-bold text-luxury-400 block uppercase">Batch A</span>
-            <span class="text-xs font-black text-luxury-900">${stockA}</span>
+            <span class="text-[9px] font-bold text-luxury-400 block uppercase"></span>
+            <span class="text-xs font-black text-luxury-900"></span>
           </div>
-          <div class="bg-white p-2 rounded-xl border border-luxury-100 flex flex-col gap-0.5 shadow-sm">
-            <span class="text-[9px] font-bold text-luxury-400 block uppercase">Batch B</span>
-            <span class="text-xs font-black text-luxury-900">${stockB}</span>
+            <span class="text-[9px] font-bold text-luxury-400 block uppercase"></span>
+            <span class="text-xs font-black text-luxury-900"></span>
           </div>
-          <div class="bg-white p-2 rounded-xl border border-luxury-100 flex flex-col gap-0.5 shadow-sm">
-            <span class="text-[9px] font-bold text-luxury-400 block uppercase">Batch C</span>
-            <span class="text-xs font-black text-luxury-900">${stockC}</span>
+            <span class="text-[9px] font-bold text-luxury-400 block uppercase"></span>
+            <span class="text-xs font-black text-luxury-900"></span>
           </div>
-          <div class="bg-white p-2 rounded-xl border border-luxury-100 flex flex-col gap-0.5 shadow-sm">
-            <span class="text-[9px] font-bold text-luxury-400 block uppercase">Batch D</span>
-            <span class="text-xs font-black text-luxury-900">${stockD}</span>
+            <span class="text-[9px] font-bold text-luxury-400 block uppercase"></span>
+            <span class="text-xs font-black text-luxury-900"></span>
           </div>
         </div>
       </div>
@@ -481,7 +495,7 @@ function copyInquiryDetails() {
   const l3 = categories.find(c => c.id === prod.l3);
 
   // const queryText = `ARCED Ceramic Showroom Inquiry:\n-----------------------------------\nProduct ID: ${prod.productId}\nName: ${prod.name}\nHierarchy Path: ${l1 ? l1.name : ''} > ${l2 ? l2.name : ''} > ${l3 ? l3.name : ''}\nAvailable Stock Level: ${prod.stock} Pcs\nDescription: ${prod.desc || ''}\n-----------------------------------\nGenerated on system: ${new Date().toLocaleString()}`;
-  const queryText = `ARCED Ceramic Showroom Inquiry:\n-----------------------------------\nProduct ID: ${prod.productId}\nName: ${prod.name}\nHierarchy Path: ${l1 ? l1.name : ''} > ${l2 ? l2.name : ''} > ${l3 ? l3.name : ''}\nAvailable Stock Level: ${prod.stock} Pcs\nDescription: ${prod.desc || ''}\nDate & Time : ${new Date().toLocaleString()}`;
+  const queryText = `ARCED Ceramic Showroom Inquiry:\n-----------------------------------\nProduct ID: ${prod.productId}\nName: ${prod.name}\nDate & Time : ${new Date().toLocaleString()}`;
 
   const el = document.createElement('textarea');
   el.value = queryText;

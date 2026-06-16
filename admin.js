@@ -450,6 +450,7 @@ function openProductModal(mode, pId = null) {
     document.getElementById('form-product-stockB').value = 0;
     document.getElementById('form-product-stockC').value = 0;
     document.getElementById('form-product-stockD').value = 0;
+    document.getElementById('form-product-link').value = '';
   } else {
     title.innerText = `Edit Specifications: ${pId}`;
     const prod = products.find(p => p.productId === pId);
@@ -465,6 +466,7 @@ function openProductModal(mode, pId = null) {
       document.getElementById('form-product-stockD').value = prod.stockD !== undefined ? prod.stockD : 0;
 
       document.getElementById('form-product-desc').value = prod.desc || '';
+      document.getElementById('form-product-link').value = prod.link || '';
 
       document.getElementById('form-product-l1').value = prod.l1;
       populateLevel2FormDropdown();
@@ -647,6 +649,7 @@ async function submitProductForm() {
   const l2 = document.getElementById('form-product-l2').value;
   const l3 = document.getElementById('form-product-l3').value;
   const desc = document.getElementById('form-product-desc').value.trim();
+  const link = document.getElementById('form-product-link').value.trim();
 
   if (modalImageBuffer.length === 0) {
     modalImageBuffer.push(SVG_TILES_1);
@@ -671,6 +674,7 @@ async function submitProductForm() {
       stockC: stockC,
       stockD: stockD,
       desc: desc,
+      link: link,
       images: modalImageBuffer
     });
 
@@ -690,6 +694,7 @@ async function submitProductForm() {
         stockC: stockC,
         stockD: stockD,
         desc: desc,
+        link: link,
         images: modalImageBuffer
       };
       triggerNotification("Product Edited", `Successfully committed updates to registry.`);
