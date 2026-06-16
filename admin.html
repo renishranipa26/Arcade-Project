@@ -328,7 +328,7 @@
             <div>
               <select id="admin-filter-main-cat" onchange="renderAdminProductsTable()"
                 class="w-full bg-luxury-50 border border-luxury-200 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-luxury-accent text-luxury-700">
-                <option value="all">All Main Categories</option>
+                <option value="all">All Categories</option>
                 <!-- Rendered dynamically -->
               </select>
             </div>
@@ -368,6 +368,26 @@
               customer catalog.</p>
           </div>
 
+          <!-- Search & Filter Controls -->
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
+            <div class="relative">
+              <input type="text" id="admin-search-stock" oninput="renderAdminStockTable()"
+                placeholder="Filter by ID or Name..."
+                class="w-full bg-luxury-50 border border-luxury-200 rounded-lg px-3 py-2 pl-9 text-xs focus:outline-none focus:border-luxury-accent text-luxury-900">
+              <i class="fa-solid fa-search absolute left-3 top-3 text-luxury-400 text-xs"></i>
+            </div>
+            <div>
+              <select id="admin-filter-stock-cat" onchange="renderAdminStockTable()"
+                class="w-full bg-luxury-50 border border-luxury-200 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-luxury-accent text-luxury-700">
+                <option value="all">All Categories</option>
+                <!-- Rendered dynamically -->
+              </select>
+            </div>
+            <div class="flex items-center gap-2 text-xs font-medium text-luxury-500 self-center justify-end">
+              <span id="admin-stock-count">0 stock items loaded</span>
+            </div>
+          </div>
+
           <!-- Stock Grid List -->
           <div class="overflow-x-auto rounded-xl border border-luxury-200 shadow-sm">
             <table class="w-full text-left border-collapse">
@@ -377,7 +397,10 @@
                   <th class="py-3 px-4">Product ID</th>
                   <th class="py-3 px-4">Product Name</th>
                   <th class="py-3 px-4 text-center">Stock Level Status</th>
-                  <th class="py-3 px-4 text-center w-52">Adjust Quantity</th>
+                  <th class="py-3 px-4 text-center w-52">Batch A</th>
+                  <th class="py-3 px-4 text-center w-52">Batch B</th>
+                  <th class="py-3 px-4 text-center w-52">Batch C</th>
+                  <th class="py-3 px-4 text-center w-52">Batch D</th>
                   <th class="py-3 px-4 text-right">Timestamp Updated</th>
                 </tr>
               </thead>
@@ -580,9 +603,23 @@
 
           <!-- Stock & Categories -->
           <div>
-            <label class="block text-[10px] font-bold uppercase tracking-wider text-luxury-500 mb-1">Showroom Stock
-              Level *</label>
-            <input type="number" id="form-product-stock" required min="0" placeholder="0"
+            <label class="block text-[10px] font-bold uppercase tracking-wider text-luxury-500 mb-1">Batch A Stock Level *</label>
+            <input type="number" id="form-product-stockA" required min="0" placeholder="0"
+              class="w-full bg-luxury-50 border border-luxury-200 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-luxury-accent text-luxury-900">
+          </div>
+          <div>
+            <label class="block text-[10px] font-bold uppercase tracking-wider text-luxury-500 mb-1">Batch B Stock Level *</label>
+            <input type="number" id="form-product-stockB" required min="0" placeholder="0"
+              class="w-full bg-luxury-50 border border-luxury-200 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-luxury-accent text-luxury-900">
+          </div>
+          <div>
+            <label class="block text-[10px] font-bold uppercase tracking-wider text-luxury-500 mb-1">Batch C Stock Level *</label>
+            <input type="number" id="form-product-stockC" required min="0" placeholder="0"
+              class="w-full bg-luxury-50 border border-luxury-200 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-luxury-accent text-luxury-900">
+          </div>
+          <div>
+            <label class="block text-[10px] font-bold uppercase tracking-wider text-luxury-500 mb-1">Batch D Stock Level *</label>
+            <input type="number" id="form-product-stockD" required min="0" placeholder="0"
               class="w-full bg-luxury-50 border border-luxury-200 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-luxury-accent text-luxury-900">
           </div>
           <div>

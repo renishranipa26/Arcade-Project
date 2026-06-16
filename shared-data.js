@@ -54,6 +54,10 @@ const SEED_PRODUCTS = [
     l2: 'cat-l2-floor-tiles',
     l3: 'cat-l3-tiles-600',
     stock: 320,
+    stockA: 320,
+    stockB: 0,
+    stockC: 0,
+    stockD: 0,
     desc: 'Double-charged, premium vitrified floor tile mirroring deep, natural Carrara marble patterns. Polished with scratch-resistant glazes.',
     images: [SVG_TILES_1, SVG_TILES_2]
   },
@@ -64,6 +68,10 @@ const SEED_PRODUCTS = [
     l2: 'cat-l2-floor-tiles',
     l3: 'cat-l3-tiles-800',
     stock: 14,
+    stockA: 14,
+    stockB: 0,
+    stockC: 0,
+    stockD: 0,
     desc: 'Large architectural floor slab matching natural grey volcanic basalt rock. Perfect for heavy traffic showrooms.',
     images: [SVG_TILES_2, SVG_TILES_1]
   },
@@ -74,6 +82,10 @@ const SEED_PRODUCTS = [
     l2: 'cat-l2-closets',
     l3: 'cat-l3-closets-onepiece',
     stock: 45,
+    stockA: 45,
+    stockB: 0,
+    stockC: 0,
+    stockD: 0,
     desc: 'One-piece, ultra-efficient siphon jet flushing closet, integrated silently with nanoglaze anti-stain bowl protection.',
     images: [SVG_SANITARY_1, SVG_SANITARY_2]
   },
@@ -84,6 +96,10 @@ const SEED_PRODUCTS = [
     l2: 'cat-l2-basins',
     l3: 'cat-l3-basins-tabletop',
     stock: 8,
+    stockA: 8,
+    stockB: 0,
+    stockC: 0,
+    stockD: 0,
     desc: 'Luxury tabletop wash basin formed using composite marble resins, smooth stain-resistant interior curves.',
     images: [SVG_SANITARY_2, SVG_SANITARY_1]
   },
@@ -94,6 +110,10 @@ const SEED_PRODUCTS = [
     l2: 'cat-l2-mixers',
     l3: 'cat-l3-mixers-basin',
     stock: 125,
+    stockA: 125,
+    stockB: 0,
+    stockC: 0,
+    stockD: 0,
     desc: 'Sculptured basin mixer constructed from solid brass. Electroplated using multi-layered premium warm gold elements.',
     images: [SVG_FAUCET_1, SVG_FAUCET_2]
   },
@@ -104,6 +124,10 @@ const SEED_PRODUCTS = [
     l2: 'cat-l2-showers',
     l3: 'cat-l3-showers-rain',
     stock: 62,
+    stockA: 62,
+    stockB: 0,
+    stockC: 0,
+    stockD: 0,
     desc: 'Smart, thermostatic multi-spray overhead panel with hand-held accessories. Sleek dark-slate electroplate casing.',
     images: [SVG_FAUCET_2, SVG_FAUCET_1]
   }
@@ -133,7 +157,21 @@ async function loadFromDatabase() {
     const resProds = await fetch('/api/products');
     if (!resProds.ok) throw new Error("Failed to fetch products");
     const serverProds = await resProds.json();
-    products = serverProds;
+    products = serverProds.map(p => {
+      const stock = parseInt(p.stock || 0);
+      const stockA = p.stockA !== undefined ? parseInt(p.stockA) : stock;
+      const stockB = p.stockB !== undefined ? parseInt(p.stockB) : 0;
+      const stockC = p.stockC !== undefined ? parseInt(p.stockC) : 0;
+      const stockD = p.stockD !== undefined ? parseInt(p.stockD) : 0;
+      return {
+        ...p,
+        stock: stockA + stockB + stockC + stockD,
+        stockA,
+        stockB,
+        stockC,
+        stockD
+      };
+    });
     localStorage.setItem('arcade_products', JSON.stringify(products));
   } catch (err) {
     console.warn("Backend CSV server offline or failed, falling back to local storage cache:", err);
@@ -144,7 +182,22 @@ async function loadFromDatabase() {
       localStorage.setItem('arcade_products', JSON.stringify(SEED_PRODUCTS));
     }
     categories = JSON.parse(localStorage.getItem('arcade_categories')) || [];
-    products = JSON.parse(localStorage.getItem('arcade_products')) || [];
+    const localProds = JSON.parse(localStorage.getItem('arcade_products')) || [];
+    products = localProds.map(p => {
+      const stock = parseInt(p.stock || 0);
+      const stockA = p.stockA !== undefined ? parseInt(p.stockA) : stock;
+      const stockB = p.stockB !== undefined ? parseInt(p.stockB) : 0;
+      const stockC = p.stockC !== undefined ? parseInt(p.stockC) : 0;
+      const stockD = p.stockD !== undefined ? parseInt(p.stockD) : 0;
+      return {
+        ...p,
+        stock: stockA + stockB + stockC + stockD,
+        stockA,
+        stockB,
+        stockC,
+        stockD
+      };
+    });
   }
 }
 

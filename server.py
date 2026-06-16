@@ -3,12 +3,14 @@ import os
 import csv
 import json
 
-app = Flask(__name__, static_folder='.', static_url_path='')
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+app = Flask(__name__, static_folder=BASE_DIR, static_url_path='')
 
 PORT = int(os.environ.get("PORT", 8000))
 
-CATEGORIES_CSV = 'categories.csv'
-PRODUCTS_CSV = 'products.csv'
+CATEGORIES_CSV = os.path.join(BASE_DIR, 'categories.csv')
+PRODUCTS_CSV = os.path.join(BASE_DIR, 'products.csv')
 
 SVG_TILES_1 = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='400' height='400' viewBox='0 0 100 100'><rect width='100' height='100' fill='%23292524'/><path d='M0 0 L100 100 M100 0 L0 100' stroke='%2344403c' stroke-width='1'/><rect x='10' y='10' width='80' height='80' fill='none' stroke='%23C41E1E' stroke-width='0.5'/><circle cx='50' cy='50' r='5' fill='%23C41E1E'/></svg>"
 SVG_TILES_2 = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='400' height='400' viewBox='0 0 100 100'><rect width='100' height='100' fill='%23e7e5e4'/><rect x='5' y='5' width='42' height='42' fill='%2378716c'/><rect x='53' y='5' width='42' height='42' fill='%23a8a29e'/><rect x='5' y='53' width='42' height='42' fill='%23d6d3d1'/><rect x='53' y='53' width='42' height='42' fill='%2357534e'/></svg>"
@@ -44,6 +46,10 @@ SEED_PRODUCTS = [
     'l2': 'cat-l2-floor-tiles',
     'l3': 'cat-l3-tiles-600',
     'stock': 320,
+    'stockA': 320,
+    'stockB': 0,
+    'stockC': 0,
+    'stockD': 0,
     'desc': 'Double-charged, premium vitrified floor tile mirroring deep, natural Carrara marble patterns. Polished with scratch-resistant glazes.',
     'images': [SVG_TILES_1, SVG_TILES_2]
   },
@@ -54,6 +60,10 @@ SEED_PRODUCTS = [
     'l2': 'cat-l2-floor-tiles',
     'l3': 'cat-l3-tiles-800',
     'stock': 14,
+    'stockA': 14,
+    'stockB': 0,
+    'stockC': 0,
+    'stockD': 0,
     'desc': 'Large architectural floor slab matching natural grey volcanic basalt rock. Perfect for heavy traffic showrooms.',
     'images': [SVG_TILES_2, SVG_TILES_1]
   },
@@ -64,6 +74,10 @@ SEED_PRODUCTS = [
     'l2': 'cat-l2-closets',
     'l3': 'cat-l3-closets-onepiece',
     'stock': 45,
+    'stockA': 45,
+    'stockB': 0,
+    'stockC': 0,
+    'stockD': 0,
     'desc': 'One-piece, ultra-efficient siphon jet flushing closet, integrated silently with nanoglaze anti-stain bowl protection.',
     'images': [SVG_SANITARY_1, SVG_SANITARY_2]
   },
@@ -74,6 +88,10 @@ SEED_PRODUCTS = [
     'l2': 'cat-l2-basins',
     'l3': 'cat-l3-basins-tabletop',
     'stock': 8,
+    'stockA': 8,
+    'stockB': 0,
+    'stockC': 0,
+    'stockD': 0,
     'desc': 'Luxury tabletop wash basin formed using composite marble resins, smooth stain-resistant interior curves.',
     'images': [SVG_SANITARY_2, SVG_SANITARY_1]
   },
@@ -84,6 +102,10 @@ SEED_PRODUCTS = [
     'l2': 'cat-l2-mixers',
     'l3': 'cat-l3-mixers-basin',
     'stock': 125,
+    'stockA': 125,
+    'stockB': 0,
+    'stockC': 0,
+    'stockD': 0,
     'desc': 'Sculptured basin mixer constructed from solid brass. Electroplated using multi-layered premium warm gold elements.',
     'images': [SVG_FAUCET_1, SVG_FAUCET_2]
   },
@@ -94,6 +116,10 @@ SEED_PRODUCTS = [
     'l2': 'cat-l2-showers',
     'l3': 'cat-l3-showers-rain',
     'stock': 62,
+    'stockA': 62,
+    'stockB': 0,
+    'stockC': 0,
+    'stockD': 0,
     'desc': 'Smart, thermostatic multi-spray overhead panel with hand-held accessories. Sleek dark-slate electroplate casing.',
     'images': [SVG_FAUCET_2, SVG_FAUCET_1]
   }
@@ -139,13 +165,25 @@ def load_products():
                     images = json.loads(row['images'])
                 except Exception:
                     images = [row['images']] if row['images'] else []
+            
+            # Read batch stocks, fallback to total stock/0
+            stock = int(row['stock']) if row.get('stock') else 0
+            stockA = int(row['stockA']) if 'stockA' in row and row['stockA'] else stock
+            stockB = int(row['stockB']) if 'stockB' in row and row['stockB'] else 0
+            stockC = int(row['stockC']) if 'stockC' in row and row['stockC'] else 0
+            stockD = int(row['stockD']) if 'stockD' in row and row['stockD'] else 0
+            
             products.append({
                 'productId': row['productId'],
                 'name': row['name'],
                 'l1': row['l1'],
                 'l2': row['l2'],
                 'l3': row['l3'],
-                'stock': int(row['stock']) if row['stock'] else 0,
+                'stock': stockA + stockB + stockC + stockD,
+                'stockA': stockA,
+                'stockB': stockB,
+                'stockC': stockC,
+                'stockD': stockD,
                 'desc': row.get('desc', ''),
                 'images': images
             })
@@ -153,16 +191,24 @@ def load_products():
 
 def save_products(products):
     with open(PRODUCTS_CSV, mode='w', encoding='utf-8', newline='') as f:
-        writer = csv.DictWriter(f, fieldnames=['productId', 'name', 'l1', 'l2', 'l3', 'stock', 'desc', 'images'])
+        writer = csv.DictWriter(f, fieldnames=['productId', 'name', 'l1', 'l2', 'l3', 'stock', 'stockA', 'stockB', 'stockC', 'stockD', 'desc', 'images'])
         writer.writeheader()
         for prod in products:
+            stockA = int(prod.get('stockA', prod.get('stock', 0)))
+            stockB = int(prod.get('stockB', 0))
+            stockC = int(prod.get('stockC', 0))
+            stockD = int(prod.get('stockD', 0))
             writer.writerow({
                 'productId': prod['productId'],
                 'name': prod['name'],
                 'l1': prod['l1'],
                 'l2': prod['l2'],
                 'l3': prod['l3'],
-                'stock': prod['stock'],
+                'stock': stockA + stockB + stockC + stockD,
+                'stockA': stockA,
+                'stockB': stockB,
+                'stockC': stockC,
+                'stockD': stockD,
                 'desc': prod.get('desc', ''),
                 'images': json.dumps(prod.get('images', []))
             })
@@ -173,13 +219,20 @@ if not os.path.exists(CATEGORIES_CSV):
 if not os.path.exists(PRODUCTS_CSV):
     save_products(SEED_PRODUCTS)
 
+# Maintain in-memory products and set of original product IDs
+IN_MEMORY_PRODUCTS = load_products()
+if IN_MEMORY_PRODUCTS is None:
+    IN_MEMORY_PRODUCTS = SEED_PRODUCTS.copy()
+
+INITIAL_PRODUCT_IDS = {prod['productId'] for prod in IN_MEMORY_PRODUCTS}
+
 @app.route('/')
 def index_route():
-    return send_from_directory('.', 'index.html')
+    return send_from_directory(BASE_DIR, 'index.html')
 
 @app.route('/admin.html')
 def admin_route():
-    return send_from_directory('.', 'admin.html')
+    return send_from_directory(BASE_DIR, 'admin.html')
 
 @app.route('/api/categories', methods=['GET', 'POST', 'OPTIONS'])
 def categories_api():
@@ -201,25 +254,22 @@ def categories_api():
 
 @app.route('/api/products', methods=['GET', 'POST', 'OPTIONS'])
 def products_api():
+    global IN_MEMORY_PRODUCTS
     if request.method == 'OPTIONS':
         return '', 200
     if request.method == 'GET':
-        products = load_products()
-        if products is None:
-            products = SEED_PRODUCTS
-            save_products(products)
-        return jsonify(products)
+        return jsonify(IN_MEMORY_PRODUCTS)
     elif request.method == 'POST':
         try:
-            products = request.get_json()
-            save_products(products)
+            IN_MEMORY_PRODUCTS = request.get_json()
+            save_products(IN_MEMORY_PRODUCTS)
             return jsonify({'status': 'success'})
         except Exception as e:
             return jsonify({'status': 'error', 'message': str(e)}), 400
 
 @app.route('/<path:path>')
 def serve_static_files(path):
-    return send_from_directory('.', path)
+    return send_from_directory(BASE_DIR, path)
 
 @app.after_request
 def add_cors_headers(response):

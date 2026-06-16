@@ -30,9 +30,9 @@ window.onload = async function () {
   setInterval(async () => {
     const previousCatsString = JSON.stringify(categories);
     const previousProdsString = JSON.stringify(products);
-    
+
     await loadFromDatabase();
-    
+
     if (JSON.stringify(categories) !== previousCatsString || JSON.stringify(products) !== previousProdsString) {
       renderDashboardOverview();
       syncCategoryDropdownOptions();
@@ -305,15 +305,22 @@ async function submitCategoryForm() {
 function renderAdminProductsTable() {
   const tbody = document.getElementById('admin-products-tbody');
   const searchInput = document.getElementById('admin-search-products').value.trim().toUpperCase();
-  const filterL1 = document.getElementById('admin-filter-main-cat').value;
+  const filterVal = document.getElementById('admin-filter-main-cat').value;
   const countLabel = document.getElementById('admin-product-count');
 
   tbody.innerHTML = '';
 
   let list = [...products];
 
-  if (filterL1 !== 'all') {
-    list = list.filter(p => p.l1 === filterL1);
+  if (filterVal !== 'all') {
+    const [level, catId] = filterVal.split('_');
+    if (level === '1') {
+      list = list.filter(p => p.l1 === catId);
+    } else if (level === '2') {
+      list = list.filter(p => p.l2 === catId);
+    } else if (level === '3') {
+      list = list.filter(p => p.l3 === catId);
+    }
   }
 
   if (searchInput) {
@@ -349,16 +356,21 @@ function renderAdminProductsTable() {
         </div>
       </td>
       <td class="py-3 px-4 text-center">
-        <span class="px-2.5 py-1 rounded-full text-[11px] font-bold ${p.stock <= 15 ? 'bg-amber-100 text-amber-800 border border-amber-200' : 'bg-green-100 text-green-800 border border-green-200'}">
-          ${p.stock}
-        </span>
+        <div class="flex flex-col items-center gap-1">
+          <span class="px-2.5 py-1 rounded-full text-[11px] font-bold ${p.stock <= 15 ? 'bg-amber-100 text-amber-800 border border-amber-200' : 'bg-green-100 text-green-800 border border-green-200'}">
+            ${p.stock}
+          </span>
+          <span class="text-[9px] text-luxury-400 font-medium font-mono">
+            A:${p.stockA !== undefined ? p.stockA : p.stock} B:${p.stockB || 0} C:${p.stockC || 0} D:${p.stockD || 0}
+          </span>
+        </div>
       </td>
       <td class="py-3 px-4 text-right">
         <div class="flex items-center justify-end gap-2.5">
           <button onclick="openProductModal('edit', '${p.productId}')" class="bg-luxury-100 hover:bg-luxury-200 text-luxury-800 hover:text-luxury-accent font-bold px-3 py-1.5 rounded-lg border border-luxury-200 transition-all-300">
             <i class="fa-solid fa-pen-to-square"></i>
           </button>
-          <button onclick="deleteProductTransaction('${p.productId}')" class="bg-red-50 hover:bg-red-100 text-red-600 font-bold px-3 py-1.5 rounded-lg border border-red-200 transition-all-300">
+          <button onclick="deleteProductTransaction('${p.productId}')" data-delete-id="${p.productId}" class="bg-red-50 hover:bg-red-100 text-red-600 font-bold px-3 py-1.5 rounded-lg border border-red-200 transition-all-300">
             <i class="fa-solid fa-trash-can"></i>
           </button>
         </div>
@@ -377,14 +389,42 @@ function renderAdminProductsTable() {
   }
 }
 
-async function deleteProductTransaction(pId) {
-  if (confirm(`Confirm deletion of product model ${pId}?`)) {
+let pendingDeleteId = null;
+let pendingDeleteTimeout = null;
+
+function deleteProductTransaction(pId) {
+  if (pendingDeleteId === pId) {
+    // Second click — confirmed, perform delete
+    clearTimeout(pendingDeleteTimeout);
+    pendingDeleteId = null;
     products = products.filter(p => p.productId !== pId);
-    await writeProductsToDatabase();
+    writeProductsToDatabase();
     renderAdminProductsTable();
     renderDashboardOverview();
     renderAdminStockTable();
     triggerNotification("Product Erased", `Catalog reference ${pId} deleted successfully.`);
+  } else {
+    // First click — ask for confirmation by changing the button
+    if (pendingDeleteTimeout) clearTimeout(pendingDeleteTimeout);
+    pendingDeleteId = pId;
+    // Find and update the delete button to show confirmation state
+    const allDeleteBtns = document.querySelectorAll(`[data-delete-id]`);
+    allDeleteBtns.forEach(btn => {
+      btn.innerHTML = `<i class="fa-solid fa-trash-can"></i>`;
+      btn.classList.remove('bg-red-600', 'text-white');
+      btn.classList.add('bg-red-50', 'text-red-600');
+    });
+    const btn = document.querySelector(`[data-delete-id="${pId}"]`);
+    if (btn) {
+      btn.innerHTML = `<i class="fa-solid fa-check"></i> Confirm`;
+      btn.classList.remove('bg-red-50', 'text-red-600');
+      btn.classList.add('bg-red-600', 'text-white');
+    }
+    // Reset after 3 seconds if not confirmed
+    pendingDeleteTimeout = setTimeout(() => {
+      pendingDeleteId = null;
+      renderAdminProductsTable();
+    }, 3000);
   }
 }
 
@@ -409,6 +449,10 @@ function openProductModal(mode, pId = null) {
   if (mode === 'add') {
     title.innerText = "Register Premium Ceramic Model";
     document.getElementById('form-product-id').removeAttribute('disabled');
+    document.getElementById('form-product-stockA').value = 0;
+    document.getElementById('form-product-stockB').value = 0;
+    document.getElementById('form-product-stockC').value = 0;
+    document.getElementById('form-product-stockD').value = 0;
   } else {
     title.innerText = `Edit Specifications: ${pId}`;
     const prod = products.find(p => p.productId === pId);
@@ -416,7 +460,13 @@ function openProductModal(mode, pId = null) {
       document.getElementById('form-product-id').value = prod.productId;
       document.getElementById('form-product-id').setAttribute('disabled', 'disabled');
       document.getElementById('form-product-name').value = prod.name;
-      document.getElementById('form-product-stock').value = prod.stock;
+      
+      const stock = parseInt(prod.stock || 0);
+      document.getElementById('form-product-stockA').value = prod.stockA !== undefined ? prod.stockA : stock;
+      document.getElementById('form-product-stockB').value = prod.stockB !== undefined ? prod.stockB : 0;
+      document.getElementById('form-product-stockC').value = prod.stockC !== undefined ? prod.stockC : 0;
+      document.getElementById('form-product-stockD').value = prod.stockD !== undefined ? prod.stockD : 0;
+      
       document.getElementById('form-product-desc').value = prod.desc || '';
 
       document.getElementById('form-product-l1').value = prod.l1;
@@ -455,18 +505,61 @@ function closeProductModal() {
 // ==========================================
 // DROPDOWN SYNC
 // ==========================================
+function getHierarchicalCategories() {
+  const list = [];
+  const l1s = categories.filter(c => c.level === 1);
+
+  l1s.sort((a, b) => a.name.localeCompare(b.name));
+
+  l1s.forEach(l1 => {
+    list.push({ id: l1.id, name: l1.name, path: l1.name, level: 1 });
+
+    const l2s = categories.filter(c => c.parentId === l1.id);
+    l2s.sort((a, b) => a.name.localeCompare(b.name));
+
+    l2s.forEach(l2 => {
+      list.push({ id: l2.id, name: l2.name, path: `${l1.name} > ${l2.name}`, level: 2 });
+
+      const l3s = categories.filter(c => c.parentId === l2.id);
+      l3s.sort((a, b) => a.name.localeCompare(b.name));
+
+      l3s.forEach(l3 => {
+        list.push({ id: l3.id, name: l3.name, path: `${l1.name} > ${l2.name} > ${l3.name}`, level: 3 });
+      });
+    });
+  });
+  return list;
+}
+
 function syncCategoryDropdownOptions() {
   const l1Dropdown = document.getElementById('form-product-l1');
   const adminFilterL1 = document.getElementById('admin-filter-main-cat');
+  const adminFilterStock = document.getElementById('admin-filter-stock-cat');
 
   l1Dropdown.innerHTML = '<option value="">Select Level 1 Category</option>';
-  adminFilterL1.innerHTML = '<option value="all">All Main Categories</option>';
+  if (adminFilterL1) {
+    adminFilterL1.innerHTML = '<option value="all">All Categories</option>';
+  }
+  if (adminFilterStock) {
+    adminFilterStock.innerHTML = '<option value="all">All Categories</option>';
+  }
 
   const l1List = categories.filter(c => c.level === 1);
 
   l1List.forEach(c => {
     l1Dropdown.innerHTML += `<option value="${c.id}">${c.name}</option>`;
-    adminFilterL1.innerHTML += `<option value="${c.id}">${c.name}</option>`;
+  });
+
+  const fullCatPaths = getHierarchicalCategories();
+  fullCatPaths.forEach(item => {
+    const indent = '\u00A0\u00A0'.repeat(item.level - 1);
+    const optionHTML = `<option value="${item.level}_${item.id}">${indent}${item.path}</option>`;
+    if (adminFilterL1) {
+      adminFilterL1.innerHTML += optionHTML;
+    }
+    if (adminFilterStock) {
+      adminFilterStock.innerHTML += optionHTML;
+    }
   });
 
   document.getElementById('form-product-l2').innerHTML = '<option value="">Select Level 2 Category</option>';
@@ -548,7 +641,11 @@ async function submitProductForm() {
 
   const pId = document.getElementById('form-product-id').value.trim().toUpperCase();
   const name = document.getElementById('form-product-name').value.trim();
-  const stock = parseInt(document.getElementById('form-product-stock').value || 0);
+  const stockA = parseInt(document.getElementById('form-product-stockA').value || 0);
+  const stockB = parseInt(document.getElementById('form-product-stockB').value || 0);
+  const stockC = parseInt(document.getElementById('form-product-stockC').value || 0);
+  const stockD = parseInt(document.getElementById('form-product-stockD').value || 0);
+  const stock = stockA + stockB + stockC + stockD;
   const l1 = document.getElementById('form-product-l1').value;
   const l2 = document.getElementById('form-product-l2').value;
   const l3 = document.getElementById('form-product-l3').value;
@@ -572,6 +669,10 @@ async function submitProductForm() {
       l2: l2,
       l3: l3,
       stock: stock,
+      stockA: stockA,
+      stockB: stockB,
+      stockC: stockC,
+      stockD: stockD,
       desc: desc,
       images: modalImageBuffer
     });
@@ -587,6 +688,10 @@ async function submitProductForm() {
         l2: l2,
         l3: l3,
         stock: stock,
+        stockA: stockA,
+        stockB: stockB,
+        stockC: stockC,
+        stockD: stockD,
         desc: desc,
         images: modalImageBuffer
       };
@@ -606,9 +711,34 @@ async function submitProductForm() {
 // ==========================================
 function renderAdminStockTable() {
   const tbody = document.getElementById('admin-stock-tbody');
+  const searchInput = document.getElementById('admin-search-stock') ? document.getElementById('admin-search-stock').value.trim().toUpperCase() : '';
+  const filterVal = document.getElementById('admin-filter-stock-cat') ? document.getElementById('admin-filter-stock-cat').value : 'all';
+  const countLabel = document.getElementById('admin-stock-count');
+
   tbody.innerHTML = '';
 
-  products.forEach(p => {
+  let list = [...products];
+
+  if (filterVal !== 'all') {
+    const [level, catId] = filterVal.split('_');
+    if (level === '1') {
+      list = list.filter(p => p.l1 === catId);
+    } else if (level === '2') {
+      list = list.filter(p => p.l2 === catId);
+    } else if (level === '3') {
+      list = list.filter(p => p.l3 === catId);
+    }
+  }
+
+  if (searchInput) {
+    list = list.filter(p => p.productId.toUpperCase().includes(searchInput) || p.name.toUpperCase().includes(searchInput));
+  }
+
+  if (countLabel) {
+    countLabel.innerText = `${list.length} stock items loaded`;
+  }
+
+  list.forEach(p => {
     const isLow = p.stock <= 15;
     const isOut = p.stock === 0;
 
@@ -632,22 +762,31 @@ function renderAdminStockTable() {
           ${levelText}
         </span>
       </td>
-      <td class="py-3.5 px-4">
-        <div class="flex items-center justify-center gap-1.5">
-          <button onclick="modifyStockValue('${p.productId}', -10)" class="w-8 h-8 rounded bg-luxury-100 text-luxury-700 hover:bg-luxury-accent hover:text-white transition-all-300 font-extrabold flex items-center justify-center">-10</button>
-          <button onclick="modifyStockValue('${p.productId}', -1)" class="w-8 h-8 rounded bg-luxury-100 text-luxury-700 hover:bg-luxury-accent hover:text-white transition-all-300 font-extrabold flex items-center justify-center">-1</button>
-
-          <input type="number" value="${p.stock}" min="0" onchange="adjustStockDirectly('${p.productId}', this.value)" class="w-16 bg-luxury-50 border border-luxury-200 text-center rounded py-1.5 font-bold text-xs focus:outline-none focus:border-luxury-accent text-luxury-900">
-
-          <button onclick="modifyStockValue('${p.productId}', 1)" class="w-8 h-8 rounded bg-luxury-100 text-luxury-700 hover:bg-luxury-accent hover:text-white transition-all-300 font-extrabold flex items-center justify-center">+1</button>
-          <button onclick="modifyStockValue('${p.productId}', 10)" class="w-8 h-8 rounded bg-luxury-100 text-luxury-700 hover:bg-luxury-accent hover:text-white transition-all-300 font-extrabold flex items-center justify-center">+10</button>
-        </div>
+      <td class="py-3.5 px-4 text-center">
+        <input type="number" value="${p.stockA !== undefined ? p.stockA : p.stock}" min="0" onchange="adjustBatchStockDirectly('${p.productId}', 'stockA', this.value)" class="w-16 bg-luxury-50 border border-luxury-200 text-center rounded py-1.5 font-bold text-xs focus:outline-none focus:border-luxury-accent text-luxury-900">
+      </td>
+      <td class="py-3.5 px-4 text-center">
+        <input type="number" value="${p.stockB !== undefined ? p.stockB : 0}" min="0" onchange="adjustBatchStockDirectly('${p.productId}', 'stockB', this.value)" class="w-16 bg-luxury-50 border border-luxury-200 text-center rounded py-1.5 font-bold text-xs focus:outline-none focus:border-luxury-accent text-luxury-900">
+      </td>
+      <td class="py-3.5 px-4 text-center">
+        <input type="number" value="${p.stockC !== undefined ? p.stockC : 0}" min="0" onchange="adjustBatchStockDirectly('${p.productId}', 'stockC', this.value)" class="w-16 bg-luxury-50 border border-luxury-200 text-center rounded py-1.5 font-bold text-xs focus:outline-none focus:border-luxury-accent text-luxury-900">
+      </td>
+      <td class="py-3.5 px-4 text-center">
+        <input type="number" value="${p.stockD !== undefined ? p.stockD : 0}" min="0" onchange="adjustBatchStockDirectly('${p.productId}', 'stockD', this.value)" class="w-16 bg-luxury-50 border border-luxury-200 text-center rounded py-1.5 font-bold text-xs focus:outline-none focus:border-luxury-accent text-luxury-900">
       </td>
       <td class="py-3.5 px-4 text-right text-luxury-400 font-medium">${new Date().toLocaleTimeString()}</td>
     `;
 
     tbody.appendChild(row);
   });
+
+  if (list.length === 0) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="8" class="text-center py-10 text-luxury-400 italic">No associated stock items found.</td>
+      </tr>
+    `;
+  }
 }
 
 async function modifyStockValue(pId, offset) {
@@ -671,10 +810,42 @@ async function adjustStockDirectly(pId, value) {
   const idx = products.findIndex(p => p.productId === pId);
   if (idx !== -1) {
     products[idx].stock = numeric;
+    products[idx].stockA = numeric;
+    products[idx].stockB = 0;
+    products[idx].stockC = 0;
+    products[idx].stockD = 0;
     await writeProductsToDatabase();
     renderAdminStockTable();
     renderDashboardOverview();
     triggerNotification("Stock Value Corrected", `Directly assigned stock of ${numeric} to ${pId}.`);
+  }
+}
+
+async function adjustBatchStockDirectly(pId, batchKey, value) {
+  let numeric = parseInt(value);
+  if (isNaN(numeric) || numeric < 0) numeric = 0;
+
+  const idx = products.findIndex(p => p.productId === pId);
+  if (idx !== -1) {
+    products[idx][batchKey] = numeric;
+    
+    const stockA = products[idx].stockA !== undefined ? parseInt(products[idx].stockA) : parseInt(products[idx].stock || 0);
+    const stockB = products[idx].stockB !== undefined ? parseInt(products[idx].stockB) : 0;
+    const stockC = products[idx].stockC !== undefined ? parseInt(products[idx].stockC) : 0;
+    const stockD = products[idx].stockD !== undefined ? parseInt(products[idx].stockD) : 0;
+    
+    products[idx].stock = stockA + stockB + stockC + stockD;
+    products[idx].stockA = stockA;
+    products[idx].stockB = stockB;
+    products[idx].stockC = stockC;
+    products[idx].stockD = stockD;
+    
+    await writeProductsToDatabase();
+    renderAdminStockTable();
+    renderDashboardOverview();
+    
+    const batchLabel = batchKey.replace('stock', 'Batch ');
+    triggerNotification("Stock Value Corrected", `Assigned stock of ${numeric} to ${pId} in ${batchLabel}. Total is now ${products[idx].stock}.`);
   }
 }
 
@@ -683,13 +854,13 @@ async function adjustStockDirectly(pId, value) {
 // ==========================================
 function downloadExcelTemplate() {
   const headers = [
-    ["Product ID", "Product Name", "Main Category", "Level 2 Category", "Level 3 Category", "Stock Quantity", "Description"]
+    ["Product ID", "Product Name", "Main Category", "Level 2 Category", "Level 3 Category", "Batch A Stock", "Batch B Stock", "Batch C Stock", "Batch D Stock", "Description"]
   ];
 
   const sampleRows = [
-    ["T-4021", "Onyx Premium Glazed Tile", "Tiles", "Floor Tiles", "600x600", "150", "Elite microcrystalline polished glazed flooring tile."],
-    ["S-5021", "Wave Wall Hung WC", "Sanitary", "Water Closets", "Wall Hung Closet", "24", "Stain free rimless smart wall hung water closet with dual wash."],
-    ["F-6021", "Cascade Tall Tap", "Faucet", "Premium Mixers", "Basin Mixers", "85", "Sleek matte design black table top faucet."]
+    ["T-4021", "Onyx Premium Glazed Tile", "Tiles", "Floor Tiles", "600x600", "100", "30", "20", "0", "Elite microcrystalline polished glazed flooring tile."],
+    ["S-5021", "Wave Wall Hung WC", "Sanitary", "Water Closets", "Wall Hung Closet", "20", "4", "0", "0", "Stain free rimless smart wall hung water closet with dual wash."],
+    ["F-6021", "Cascade Tall Tap", "Faucet", "Premium Mixers", "Basin Mixers", "50", "20", "15", "0", "Sleek matte design black table top faucet."]
   ];
 
   const data = headers.concat(sampleRows);
@@ -703,6 +874,9 @@ function downloadExcelTemplate() {
     { wch: 18 },
     { wch: 22 },
     { wch: 22 },
+    { wch: 15 },
+    { wch: 15 },
+    { wch: 15 },
     { wch: 15 },
     { wch: 45 }
   ];
@@ -764,9 +938,15 @@ function processImportEvaluation(filename) {
   const colL2Idx = headers.indexOf("level 2 category");
   const colL3Idx = headers.indexOf("level 3 category");
   const colStockIdx = headers.indexOf("stock quantity");
+  const colStockAIdx = headers.findIndex(h => h === "batch a stock" || h === "stock a" || h === "batch a");
+  const colStockBIdx = headers.findIndex(h => h === "batch b stock" || h === "stock b" || h === "batch b");
+  const colStockCIdx = headers.findIndex(h => h === "batch c stock" || h === "stock c" || h === "batch c");
+  const colStockDIdx = headers.findIndex(h => h === "batch d stock" || h === "stock d" || h === "batch d");
   const colDescIdx = headers.indexOf("description");
 
-  if (colIdIdx === -1 || colNameIdx === -1 || colL1Idx === -1 || colL2Idx === -1 || colL3Idx === -1 || colStockIdx === -1) {
+  const hasBatchColumns = (colStockAIdx !== -1 && colStockBIdx !== -1 && colStockCIdx !== -1 && colStockDIdx !== -1);
+
+  if (colIdIdx === -1 || colNameIdx === -1 || colL1Idx === -1 || colL2Idx === -1 || colL3Idx === -1 || (colStockIdx === -1 && !hasBatchColumns)) {
     triggerNotification("Schema Validation Failed", "Excel columns do not match ARCED schema headers.", "error");
     return;
   }
@@ -787,11 +967,46 @@ function processImportEvaluation(filename) {
     const rawL1 = row[colL1Idx] ? String(row[colL1Idx]).trim() : '';
     const rawL2 = row[colL2Idx] ? String(row[colL2Idx]).trim() : '';
     const rawL3 = row[colL3Idx] ? String(row[colL3Idx]).trim() : '';
-    const rawStock = row[colStockIdx] !== undefined ? parseInt(row[colStockIdx]) : NaN;
     const rawDesc = colDescIdx !== -1 && row[colDescIdx] ? String(row[colDescIdx]).trim() : '';
 
     let parsedCorrectly = true;
     let diagnosticNote = "Ready to Sync";
+
+    let stockValA = 0;
+    let stockValB = 0;
+    let stockValC = 0;
+    let stockValD = 0;
+    let rawStock = 0;
+
+    if (hasBatchColumns) {
+      const parsedA = row[colStockAIdx] !== undefined ? parseInt(row[colStockAIdx]) : 0;
+      const parsedB = row[colStockBIdx] !== undefined ? parseInt(row[colStockBIdx]) : 0;
+      const parsedC = row[colStockCIdx] !== undefined ? parseInt(row[colStockCIdx]) : 0;
+      const parsedD = row[colStockDIdx] !== undefined ? parseInt(row[colStockDIdx]) : 0;
+
+      if (isNaN(parsedA) || parsedA < 0 || isNaN(parsedB) || parsedB < 0 || isNaN(parsedC) || parsedC < 0 || isNaN(parsedD) || parsedD < 0) {
+        parsedCorrectly = false;
+        diagnosticNote = "Invalid batch stock volume";
+      } else {
+        stockValA = parsedA;
+        stockValB = parsedB;
+        stockValC = parsedC;
+        stockValD = parsedD;
+        rawStock = stockValA + stockValB + stockValC + stockValD;
+      }
+    } else {
+      const parsedStock = row[colStockIdx] !== undefined ? parseInt(row[colStockIdx]) : NaN;
+      if (isNaN(parsedStock) || parsedStock < 0) {
+        parsedCorrectly = false;
+        diagnosticNote = "Invalid stock volume";
+      } else {
+        rawStock = parsedStock;
+        stockValA = parsedStock;
+        stockValB = 0;
+        stockValC = 0;
+        stockValD = 0;
+      }
+    }
 
     if (!rawId) {
       parsedCorrectly = false;
@@ -802,9 +1017,6 @@ function processImportEvaluation(filename) {
     } else if (!rawL1 || !rawL2 || !rawL3) {
       parsedCorrectly = false;
       diagnosticNote = "Incomplete category path";
-    } else if (isNaN(rawStock) || rawStock < 0) {
-      parsedCorrectly = false;
-      diagnosticNote = "Invalid stock volume";
     }
 
     if (parsedCorrectly) validCount++; else invalidCount++;
@@ -816,7 +1028,11 @@ function processImportEvaluation(filename) {
       l1: rawL1,
       l2: rawL2,
       l3: rawL3,
-      stock: isNaN(rawStock) ? 0 : rawStock,
+      stock: rawStock,
+      stockA: stockValA,
+      stockB: stockValB,
+      stockC: stockValC,
+      stockD: stockValD,
       desc: rawDesc,
       valid: parsedCorrectly,
       diagnostic: diagnosticNote
@@ -829,7 +1045,7 @@ function processImportEvaluation(filename) {
       <td class="py-2 px-4 font-black">${rawId || 'MISSING'}</td>
       <td class="py-2 px-4 font-bold">${rawName || 'MISSING'}</td>
       <td class="py-2 px-4">${rawL1} > ${rawL2} > ${rawL3}</td>
-      <td class="py-2 px-4 font-bold">${isNaN(rawStock) ? 'ERR' : rawStock}</td>
+      <td class="py-2 px-4 font-bold">${!parsedCorrectly && isNaN(rawStock) ? 'ERR' : rawStock}</td>
       <td class="py-2 px-4 text-center">
         <span class="inline-block px-2 py-0.5 rounded text-[10px] font-bold ${parsedCorrectly ? 'bg-green-100 text-green-800' : 'bg-red-200 text-red-950'}">
           ${diagnosticNote}
@@ -897,6 +1113,10 @@ async function executeImportTransaction() {
         l2: resolvedIds.l2,
         l3: resolvedIds.l3,
         stock: batchRow.stock,
+        stockA: batchRow.stockA,
+        stockB: batchRow.stockB,
+        stockC: batchRow.stockC,
+        stockD: batchRow.stockD,
         desc: batchRow.desc || products[idx].desc
       };
     } else {
@@ -907,6 +1127,10 @@ async function executeImportTransaction() {
         l2: resolvedIds.l2,
         l3: resolvedIds.l3,
         stock: batchRow.stock,
+        stockA: batchRow.stockA,
+        stockB: batchRow.stockB,
+        stockC: batchRow.stockC,
+        stockD: batchRow.stockD,
         desc: batchRow.desc,
         images: [SVG_TILES_1]
       });

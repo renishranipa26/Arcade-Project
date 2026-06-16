@@ -29,9 +29,9 @@ window.onload = async function () {
   setInterval(async () => {
     const previousCatsString = JSON.stringify(categories);
     const previousProdsString = JSON.stringify(products);
-    
+
     await loadFromDatabase();
-    
+
     if (JSON.stringify(categories) !== previousCatsString || JSON.stringify(products) !== previousProdsString) {
       renderShowroomAccordion();
       renderShowroomProducts();
@@ -321,7 +321,6 @@ function renderShowroomProducts() {
           <div class="flex gap-1.5 items-center">
             ${generateThumbnailSwitcherRow(prod)}
           </div>
-          <span class="text-xs font-bold text-luxury-900 bg-luxury-100 px-2.5 py-1 rounded-lg border border-luxury-200">${prod.stock} pcs</span>
         </div>
       </div>
     `;
@@ -370,7 +369,40 @@ function openShowroomModal(pId) {
   document.getElementById('showroom-modal-title').innerText = prod.name;
   document.getElementById('showroom-modal-product-id').innerText = `ID: ${prod.productId}`;
   document.getElementById('showroom-modal-desc').innerText = prod.desc || "A flagship model offering unmatched durability, sleek lines, and modern aesthetics curated especially for designer environments.";
-  document.getElementById('showroom-modal-stock').innerText = prod.stock;
+  const stockContainer = document.getElementById('showroom-modal-stock');
+  if (stockContainer) {
+    const stockA = prod.stockA !== undefined ? prod.stockA : prod.stock;
+    const stockB = prod.stockB !== undefined ? prod.stockB : 0;
+    const stockC = prod.stockC !== undefined ? prod.stockC : 0;
+    const stockD = prod.stockD !== undefined ? prod.stockD : 0;
+    
+    stockContainer.innerHTML = `
+      <div class="flex flex-col gap-2.5 bg-luxury-50 p-4 rounded-2xl border border-luxury-200 w-full shadow-sm">
+        <div class="flex items-center justify-between">
+          <span class="text-[10px] font-extrabold uppercase tracking-widest text-luxury-500">Aggregated Catalog Volume</span>
+          <span class="text-2xl font-black text-luxury-900">${prod.stock} Pcs</span>
+        </div>
+        <div class="grid grid-cols-4 gap-2 pt-2.5 border-t border-luxury-200 text-center">
+          <div class="bg-white p-2 rounded-xl border border-luxury-100 flex flex-col gap-0.5 shadow-sm">
+            <span class="text-[9px] font-bold text-luxury-400 block uppercase">Batch A</span>
+            <span class="text-xs font-black text-luxury-900">${stockA}</span>
+          </div>
+          <div class="bg-white p-2 rounded-xl border border-luxury-100 flex flex-col gap-0.5 shadow-sm">
+            <span class="text-[9px] font-bold text-luxury-400 block uppercase">Batch B</span>
+            <span class="text-xs font-black text-luxury-900">${stockB}</span>
+          </div>
+          <div class="bg-white p-2 rounded-xl border border-luxury-100 flex flex-col gap-0.5 shadow-sm">
+            <span class="text-[9px] font-bold text-luxury-400 block uppercase">Batch C</span>
+            <span class="text-xs font-black text-luxury-900">${stockC}</span>
+          </div>
+          <div class="bg-white p-2 rounded-xl border border-luxury-100 flex flex-col gap-0.5 shadow-sm">
+            <span class="text-[9px] font-bold text-luxury-400 block uppercase">Batch D</span>
+            <span class="text-xs font-black text-luxury-900">${stockD}</span>
+          </div>
+        </div>
+      </div>
+    `;
+  }
 
   // Category breadcrumb trail
   const l1 = categories.find(c => c.id === prod.l1);
