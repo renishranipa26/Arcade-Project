@@ -360,9 +360,6 @@ function renderAdminProductsTable() {
           <span class="px-2.5 py-1 rounded-full text-[11px] font-bold ${p.stock <= 15 ? 'bg-amber-100 text-amber-800 border border-amber-200' : 'bg-green-100 text-green-800 border border-green-200'}">
             ${p.stock}
           </span>
-          <span class="text-[9px] text-luxury-400 font-medium font-mono">
-            A:${p.stockA !== undefined ? p.stockA : p.stock} B:${p.stockB || 0} C:${p.stockC || 0} D:${p.stockD || 0}
-          </span>
         </div>
       </td>
       <td class="py-3 px-4 text-right">
@@ -460,13 +457,13 @@ function openProductModal(mode, pId = null) {
       document.getElementById('form-product-id').value = prod.productId;
       document.getElementById('form-product-id').setAttribute('disabled', 'disabled');
       document.getElementById('form-product-name').value = prod.name;
-      
+
       const stock = parseInt(prod.stock || 0);
       document.getElementById('form-product-stockA').value = prod.stockA !== undefined ? prod.stockA : stock;
       document.getElementById('form-product-stockB').value = prod.stockB !== undefined ? prod.stockB : 0;
       document.getElementById('form-product-stockC').value = prod.stockC !== undefined ? prod.stockC : 0;
       document.getElementById('form-product-stockD').value = prod.stockD !== undefined ? prod.stockD : 0;
-      
+
       document.getElementById('form-product-desc').value = prod.desc || '';
 
       document.getElementById('form-product-l1').value = prod.l1;
@@ -739,29 +736,11 @@ function renderAdminStockTable() {
   }
 
   list.forEach(p => {
-    const isLow = p.stock <= 15;
-    const isOut = p.stock === 0;
-
-    let levelClass = "bg-green-100 text-green-800 border-green-200";
-    let levelText = "Optimal Stock";
-    if (isOut) {
-      levelClass = "bg-red-100 text-red-800 border-red-200";
-      levelText = "OUT OF STOCK";
-    } else if (isLow) {
-      levelClass = "bg-amber-100 text-amber-800 border-amber-200 animate-pulse";
-      levelText = "LOW VOLUME";
-    }
-
     const row = document.createElement('tr');
     row.className = "hover:bg-luxury-50 transition-all-300";
     row.innerHTML = `
       <td class="py-3.5 px-4 font-black text-luxury-900">${p.productId}</td>
       <td class="py-3.5 px-4 font-bold text-luxury-800">${p.name}</td>
-      <td class="py-3.5 px-4 text-center">
-        <span class="px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-widest border ${levelClass}">
-          ${levelText}
-        </span>
-      </td>
       <td class="py-3.5 px-4 text-center">
         <input type="number" value="${p.stockA !== undefined ? p.stockA : p.stock}" min="0" onchange="adjustBatchStockDirectly('${p.productId}', 'stockA', this.value)" class="w-16 bg-luxury-50 border border-luxury-200 text-center rounded py-1.5 font-bold text-xs focus:outline-none focus:border-luxury-accent text-luxury-900">
       </td>
@@ -773,6 +752,13 @@ function renderAdminStockTable() {
       </td>
       <td class="py-3.5 px-4 text-center">
         <input type="number" value="${p.stockD !== undefined ? p.stockD : 0}" min="0" onchange="adjustBatchStockDirectly('${p.productId}', 'stockD', this.value)" class="w-16 bg-luxury-50 border border-luxury-200 text-center rounded py-1.5 font-bold text-xs focus:outline-none focus:border-luxury-accent text-luxury-900">
+      </td>
+      <td class="py-3.5 px-4 text-center font-bold text-luxury-800">
+        <div class="flex flex-col items-center gap-1">
+          <span class="px-2.5 py-1 rounded-full text-[11px] font-bold ${p.stock <= 15 ? 'bg-amber-100 text-amber-800 border border-amber-200' : 'bg-green-100 text-green-800 border border-green-200'}">
+            ${p.stock}
+          </span>
+        </div>
       </td>
       <td class="py-3.5 px-4 text-right text-luxury-400 font-medium">${new Date().toLocaleTimeString()}</td>
     `;
@@ -828,22 +814,22 @@ async function adjustBatchStockDirectly(pId, batchKey, value) {
   const idx = products.findIndex(p => p.productId === pId);
   if (idx !== -1) {
     products[idx][batchKey] = numeric;
-    
+
     const stockA = products[idx].stockA !== undefined ? parseInt(products[idx].stockA) : parseInt(products[idx].stock || 0);
     const stockB = products[idx].stockB !== undefined ? parseInt(products[idx].stockB) : 0;
     const stockC = products[idx].stockC !== undefined ? parseInt(products[idx].stockC) : 0;
     const stockD = products[idx].stockD !== undefined ? parseInt(products[idx].stockD) : 0;
-    
+
     products[idx].stock = stockA + stockB + stockC + stockD;
     products[idx].stockA = stockA;
     products[idx].stockB = stockB;
     products[idx].stockC = stockC;
     products[idx].stockD = stockD;
-    
+
     await writeProductsToDatabase();
     renderAdminStockTable();
     renderDashboardOverview();
-    
+
     const batchLabel = batchKey.replace('stock', 'Batch ');
     triggerNotification("Stock Value Corrected", `Assigned stock of ${numeric} to ${pId} in ${batchLabel}. Total is now ${products[idx].stock}.`);
   }

@@ -234,12 +234,12 @@ function renderShowroomProducts() {
   grid.innerHTML = '';
 
   // Determine active headers
-  let titleText = "Tiles Premium";
+  let titleText = "Tiles";
   let trailText = "/ Tiles";
 
   if (selectedShowroomL1) {
     const c1 = categories.find(c => c.id === selectedShowroomL1);
-    titleText = c1 ? `${c1.name} Premium` : titleText;
+    titleText = c1 ? `${c1.name} ` : titleText;
     trailText = ` / ${c1 ? c1.name : ''}`;
   }
   if (selectedShowroomL2) {
@@ -286,9 +286,9 @@ function renderShowroomProducts() {
     if (outOfStock) {
       badgeHtml = `<span class="absolute top-3 left-3 bg-red-600 text-white text-[9px] font-black uppercase tracking-wider px-2 py-1 rounded shadow">Out of stock</span>`;
     } else if (lowStock) {
-      badgeHtml = `<span class="absolute top-3 left-3 bg-amber-500 text-white text-[9px] font-black uppercase tracking-wider px-2 py-1 rounded shadow animate-pulse">Low stock: ${prod.stock}</span>`;
+      badgeHtml = `<span class="absolute top-3 left-3 text-white text-[9px] font-black uppercase tracking-wider px-2 py-1">${prod.stock}</span>`;
     } else {
-      badgeHtml = `<span class="absolute top-3 left-3 bg-green-600 text-white text-[9px] font-black uppercase tracking-wider px-2 py-1 rounded shadow">In Stock</span>`;
+      badgeHtml = `<span class="absolute top-3 left-3 text-white text-[9px] font-black uppercase tracking-wider px-2 py-1"></span>`;
     }
 
     const card = document.createElement('div');
@@ -375,7 +375,7 @@ function openShowroomModal(pId) {
     const stockB = prod.stockB !== undefined ? prod.stockB : 0;
     const stockC = prod.stockC !== undefined ? prod.stockC : 0;
     const stockD = prod.stockD !== undefined ? prod.stockD : 0;
-    
+
     stockContainer.innerHTML = `
       <div class="flex flex-col gap-2.5 bg-luxury-50 p-4 rounded-2xl border border-luxury-200 w-full shadow-sm">
         <div class="flex items-center justify-between">
