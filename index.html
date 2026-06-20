@@ -293,8 +293,13 @@
       <i class="fa-solid fa-chevron-right text-3xl md:text-5xl drop-shadow-lg"></i>
     </button>
 
-    <div class="relative w-full h-full flex items-center justify-center overflow-hidden" id="fullscreen-touch-area">
+    <div class="relative w-full h-full flex items-center justify-center overflow-hidden pb-20" id="fullscreen-touch-area">
       <img id="fullscreen-image" src="" alt="Fullscreen Preview" class="max-w-full max-h-full object-contain cursor-zoom-out shadow-2xl scale-95 transition-all duration-300 pointer-events-none">
+    </div>
+
+    <!-- Thumbnails Container -->
+    <div id="fullscreen-thumbnails" class="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 overflow-x-auto max-w-[90vw] p-2 z-[110] no-scrollbar">
+      <!-- Generated dynamically -->
     </div>
   </div>
 

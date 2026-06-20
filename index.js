@@ -519,6 +519,20 @@ function openFullScreenGallery(images, startIndex) {
   fsImages = images;
   fsIndex = startIndex >= 0 && startIndex < images.length ? startIndex : 0;
   
+  // Generate thumbnails
+  const thumbsContainer = document.getElementById('fullscreen-thumbnails');
+  if (thumbsContainer) {
+    if (fsImages.length > 1) {
+      thumbsContainer.innerHTML = fsImages.map((img, idx) => `
+        <div onclick="setFullScreenImage(${idx}, event)" id="fs-thumb-${idx}" class="w-16 h-16 shrink-0 rounded-lg overflow-hidden border-2 border-transparent cursor-pointer transition-all-300 opacity-60 hover:opacity-100">
+          <img src="${img}" class="w-full h-full object-cover pointer-events-none">
+        </div>
+      `).join('');
+    } else {
+      thumbsContainer.innerHTML = '';
+    }
+  }
+
   updateFullScreenUI();
   
   const viewer = document.getElementById('fullscreen-image-viewer');
@@ -532,6 +546,14 @@ function openFullScreenGallery(images, startIndex) {
   }, 10);
   
   setupFullScreenTouch();
+}
+
+function setFullScreenImage(index, event) {
+  if (event) event.stopPropagation();
+  if (index >= 0 && index < fsImages.length) {
+    fsIndex = index;
+    updateFullScreenUI();
+  }
 }
 
 function updateFullScreenUI() {
@@ -554,6 +576,23 @@ function updateFullScreenUI() {
     if (nextBtn) nextBtn.classList.add('hidden');
     if (counter) counter.innerText = '';
   }
+
+  // Update thumbnails
+  fsImages.forEach((_, idx) => {
+    const thumb = document.getElementById(`fs-thumb-${idx}`);
+    if (thumb) {
+      if (idx === fsIndex) {
+        thumb.classList.replace('border-transparent', 'border-white');
+        thumb.classList.remove('opacity-60');
+        thumb.classList.add('opacity-100');
+        thumb.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+      } else {
+        thumb.classList.replace('border-white', 'border-transparent');
+        thumb.classList.remove('opacity-100');
+        thumb.classList.add('opacity-60');
+      }
+    }
+  });
 }
 
 function nextFullScreenImage(e) {
