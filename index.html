@@ -272,12 +272,30 @@
 
   <!-- FULLSCREEN IMAGE VIEWER -->
   <div id="fullscreen-image-viewer"
-    class="hidden fixed inset-0 z-[100] bg-black/95 backdrop-blur-md flex items-center justify-center p-4 transition-opacity duration-300 opacity-0">
+    class="hidden fixed inset-0 z-[100] bg-black/95 backdrop-blur-md flex items-center justify-center p-4 transition-opacity duration-300 opacity-0 select-none">
+    
+    <div id="fullscreen-counter" class="absolute top-6 left-6 text-white/70 font-bold tracking-widest text-sm z-[110]">
+      1 / 1
+    </div>
+
     <button onclick="closeFullScreenImage()"
       class="absolute top-4 right-4 md:top-6 md:right-6 text-white/70 hover:text-white transition-all-300 p-2 z-[110] bg-black/30 rounded-full hover:bg-black/50">
       <i class="fa-solid fa-xmark text-2xl md:text-3xl"></i>
     </button>
-    <img id="fullscreen-image" src="" alt="Fullscreen Preview" class="max-w-full max-h-full object-contain cursor-zoom-out shadow-2xl scale-95 transition-transform duration-300" onclick="closeFullScreenImage()">
+    
+    <button id="fullscreen-prev-btn" onclick="prevFullScreenImage(event)"
+      class="hidden absolute left-4 md:left-8 top-1/2 -translate-y-1/2 text-white/50 hover:text-white transition-all-300 p-4 z-[110] hover:scale-110">
+      <i class="fa-solid fa-chevron-left text-3xl md:text-5xl drop-shadow-lg"></i>
+    </button>
+    
+    <button id="fullscreen-next-btn" onclick="nextFullScreenImage(event)"
+      class="hidden absolute right-4 md:right-8 top-1/2 -translate-y-1/2 text-white/50 hover:text-white transition-all-300 p-4 z-[110] hover:scale-110">
+      <i class="fa-solid fa-chevron-right text-3xl md:text-5xl drop-shadow-lg"></i>
+    </button>
+
+    <div class="relative w-full h-full flex items-center justify-center overflow-hidden" id="fullscreen-touch-area">
+      <img id="fullscreen-image" src="" alt="Fullscreen Preview" class="max-w-full max-h-full object-contain cursor-zoom-out shadow-2xl scale-95 transition-all duration-300 pointer-events-none">
+    </div>
   </div>
 
   <!-- FOOTER -->

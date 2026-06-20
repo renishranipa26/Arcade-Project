@@ -510,34 +510,91 @@ function copyInquiryDetails() {
 // ==========================================
 // FULLSCREEN IMAGE VIEWER
 // ==========================================
-function openFullScreenWithSrc(src) {
-  if (!src) return;
-  const viewer = document.getElementById('fullscreen-image-viewer');
-  const fullImg = document.getElementById('fullscreen-image');
+let fsImages = [];
+let fsIndex = 0;
+let touchStartX = 0;
+
+function openFullScreenGallery(images, startIndex) {
+  if (!images || images.length === 0) return;
+  fsImages = images;
+  fsIndex = startIndex >= 0 && startIndex < images.length ? startIndex : 0;
   
-  fullImg.src = src;
+  updateFullScreenUI();
+  
+  const viewer = document.getElementById('fullscreen-image-viewer');
   viewer.classList.remove('hidden');
   
   // Animate in
   setTimeout(() => {
     viewer.classList.remove('opacity-0');
-    fullImg.classList.remove('scale-95');
-    fullImg.classList.add('scale-100');
+    document.getElementById('fullscreen-image').classList.remove('scale-95');
+    document.getElementById('fullscreen-image').classList.add('scale-100');
   }, 10);
+  
+  setupFullScreenTouch();
+}
+
+function updateFullScreenUI() {
+  const fullImg = document.getElementById('fullscreen-image');
+  const counter = document.getElementById('fullscreen-counter');
+  const prevBtn = document.getElementById('fullscreen-prev-btn');
+  const nextBtn = document.getElementById('fullscreen-next-btn');
+  
+  fullImg.src = fsImages[fsIndex];
+  
+  if (counter) {
+    counter.innerText = `${fsIndex + 1} / ${fsImages.length}`;
+  }
+  
+  if (fsImages.length > 1) {
+    if (prevBtn) prevBtn.classList.remove('hidden');
+    if (nextBtn) nextBtn.classList.remove('hidden');
+  } else {
+    if (prevBtn) prevBtn.classList.add('hidden');
+    if (nextBtn) nextBtn.classList.add('hidden');
+    if (counter) counter.innerText = '';
+  }
+}
+
+function nextFullScreenImage(e) {
+  if (e) e.stopPropagation();
+  if (fsImages.length <= 1) return;
+  fsIndex = (fsIndex + 1) % fsImages.length;
+  updateFullScreenUI();
+}
+
+function prevFullScreenImage(e) {
+  if (e) e.stopPropagation();
+  if (fsImages.length <= 1) return;
+  fsIndex = (fsIndex - 1 + fsImages.length) % fsImages.length;
+  updateFullScreenUI();
 }
 
 function openFullScreenImage() {
+  if (!currentModalProductId) return;
+  const prod = products.find(p => p.productId === currentModalProductId);
+  if (!prod || !prod.images) return;
+  
   const mainImg = document.getElementById('showroom-modal-main-img');
+  let startIdx = 0;
   if (mainImg && mainImg.src) {
-    openFullScreenWithSrc(mainImg.src);
+    startIdx = prod.images.findIndex(img => mainImg.src.includes(img));
+    if (startIdx === -1) startIdx = 0;
   }
+  openFullScreenGallery(prod.images, startIdx);
 }
 
 function openFullScreenFromCard(pId) {
+  const prod = products.find(p => p.productId === pId);
+  if (!prod || !prod.images) return;
+  
   const img = document.getElementById(`card-img-${pId}`);
+  let startIdx = 0;
   if (img && img.src) {
-    openFullScreenWithSrc(img.src);
+    startIdx = prod.images.findIndex(i => img.src.includes(i));
+    if (startIdx === -1) startIdx = 0;
   }
+  openFullScreenGallery(prod.images, startIdx);
 }
 
 function closeFullScreenImage() {
@@ -551,5 +608,36 @@ function closeFullScreenImage() {
   setTimeout(() => {
     viewer.classList.add('hidden');
     fullImg.src = '';
+    fsImages = [];
   }, 300);
+}
+
+function setupFullScreenTouch() {
+  const touchArea = document.getElementById('fullscreen-touch-area');
+  if (!touchArea) return;
+  
+  touchArea.ontouchstart = (e) => {
+    touchStartX = e.changedTouches[0].screenX;
+  };
+  touchArea.ontouchend = (e) => {
+    const touchEndX = e.changedTouches[0].screenX;
+    handleFullScreenSwipe(touchStartX, touchEndX);
+  };
+  
+  // also allow clicking the image or background to close (except arrows)
+  touchArea.onclick = (e) => {
+    if (e.target.id === 'fullscreen-touch-area' || e.target.id === 'fullscreen-image') {
+      closeFullScreenImage();
+    }
+  };
+}
+
+function handleFullScreenSwipe(startX, endX) {
+  if (fsImages.length <= 1) return;
+  const threshold = 50;
+  if (startX - endX > threshold) {
+    nextFullScreenImage();
+  } else if (endX - startX > threshold) {
+    prevFullScreenImage();
+  }
 }
