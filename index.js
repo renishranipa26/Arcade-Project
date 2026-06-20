@@ -295,14 +295,14 @@ function renderShowroomProducts() {
     card.className = "group bg-white border border-luxury-200 hover:border-luxury-accent/40 rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all-300 flex flex-col justify-between";
 
     card.innerHTML = `
-      <div class="relative overflow-hidden aspect-square bg-luxury-50 flex items-center justify-center cursor-pointer" onclick="openShowroomModal('${prod.productId}')">
+      <div class="relative overflow-hidden aspect-square bg-luxury-50 flex items-center justify-center cursor-pointer" onclick="openFullScreenFromCard('${prod.productId}')">
         <img id="card-img-${prod.productId}" src="${mainImg}" alt="${prod.name}" class="w-full h-full object-cover group-hover:scale-105 transition-all-300 duration-500">
         ${badgeHtml}
         ${prod.link ? `<a href="${prod.link}" target="_blank" onclick="event.stopPropagation()" class="absolute top-3 right-3 bg-white/90 hover:bg-white text-luxury-900 text-[10px] font-black uppercase tracking-wider px-2 py-1 rounded shadow-md z-10 transition-all flex items-center gap-1"><i class="fa-solid fa-arrows-rotate"></i> 360°</a>` : ''}
 
         <div class="absolute inset-0 bg-luxury-900/40 opacity-0 group-hover:opacity-100 transition-all-300 flex items-center justify-center">
           <span class="bg-white/95 text-luxury-900 text-xs font-bold uppercase tracking-wider px-4 py-2.5 rounded-xl shadow-lg flex items-center gap-1.5 transform translate-y-3 group-hover:translate-y-0 transition-all-300">
-            <i class="fa-solid fa-expand text-luxury-accent"></i> View Specs
+            <i class="fa-solid fa-expand text-luxury-accent"></i> Full Screen
           </span>
         </div>
       </div>
@@ -505,4 +505,51 @@ function copyInquiryDetails() {
   document.body.removeChild(el);
 
   triggerNotification("Inquiry Details Copied", "Share details directly with your regional ARCED Ceramic representative.");
+}
+
+// ==========================================
+// FULLSCREEN IMAGE VIEWER
+// ==========================================
+function openFullScreenWithSrc(src) {
+  if (!src) return;
+  const viewer = document.getElementById('fullscreen-image-viewer');
+  const fullImg = document.getElementById('fullscreen-image');
+  
+  fullImg.src = src;
+  viewer.classList.remove('hidden');
+  
+  // Animate in
+  setTimeout(() => {
+    viewer.classList.remove('opacity-0');
+    fullImg.classList.remove('scale-95');
+    fullImg.classList.add('scale-100');
+  }, 10);
+}
+
+function openFullScreenImage() {
+  const mainImg = document.getElementById('showroom-modal-main-img');
+  if (mainImg && mainImg.src) {
+    openFullScreenWithSrc(mainImg.src);
+  }
+}
+
+function openFullScreenFromCard(pId) {
+  const img = document.getElementById(`card-img-${pId}`);
+  if (img && img.src) {
+    openFullScreenWithSrc(img.src);
+  }
+}
+
+function closeFullScreenImage() {
+  const viewer = document.getElementById('fullscreen-image-viewer');
+  const fullImg = document.getElementById('fullscreen-image');
+  
+  viewer.classList.add('opacity-0');
+  fullImg.classList.remove('scale-100');
+  fullImg.classList.add('scale-95');
+  
+  setTimeout(() => {
+    viewer.classList.add('hidden');
+    fullImg.src = '';
+  }, 300);
 }
