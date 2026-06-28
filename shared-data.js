@@ -216,7 +216,7 @@ async function writeCategoriesToDatabase() {
 }
 
 async function writeProductsToDatabase() {
-  localStorage.setItem('arcade_products', JSON.stringify(products));
+  //localStorage.setItem('arcade_products', JSON.stringify(products));
   try {
     const res = await fetch('/api/products', {
       method: 'POST',
