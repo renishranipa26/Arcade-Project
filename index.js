@@ -209,6 +209,16 @@ function selectL3Filter(l1Id, l2Id, l3Id) {
   selectedShowroomL3 = (selectedShowroomL3 === l3Id) ? null : l3Id;
   renderShowroomAccordion();
   renderShowroomProducts();
+
+  // When an L3 category is selected, scroll to the first product card
+  if (selectedShowroomL3) {
+    setTimeout(() => {
+      const grid = document.getElementById('showroom-grid');
+      if (grid && grid.firstElementChild) {
+        grid.firstElementChild.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }, 50);
+  }
 }
 
 function resetCategoryFilters() {
