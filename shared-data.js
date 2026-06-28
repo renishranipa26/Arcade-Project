@@ -172,7 +172,7 @@ async function loadFromDatabase() {
         stockD
       };
     });
-    localStorage.setItem('arcade_products', JSON.stringify(products));
+    // localStorage.setItem('arcade_products', JSON.stringify(products));
   } catch (err) {
     console.warn("Backend CSV server offline or failed, falling back to local storage cache:", err);
     if (!localStorage.getItem('arcade_categories')) {
