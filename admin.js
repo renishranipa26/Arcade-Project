@@ -597,7 +597,14 @@ function handleModalImageUpload(event) {
   const files = event.target.files;
   if (!files || files.length === 0) return;
 
+  const MAX_SIZE_MB = 10;
+  const MAX_SIZE_BYTES = MAX_SIZE_MB * 1024 * 1024;
+
   Array.from(files).forEach(file => {
+    if (file.size > MAX_SIZE_BYTES) {
+      triggerNotification("Upload Error", `File "${file.name}" exceeds the ${MAX_SIZE_MB}MB limit.`, "error");
+      return;
+    }
     const reader = new FileReader();
     reader.onload = function (e) {
       modalImageBuffer.push(e.target.result);

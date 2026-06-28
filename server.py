@@ -6,6 +6,7 @@ import json
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 app = Flask(__name__, static_folder=BASE_DIR, static_url_path='')
+app.config['MAX_CONTENT_LENGTH'] = 100 * 1024 * 1024  # 100 MB max payload for multiple 10MB base64 images
 
 PORT = int(os.environ.get("PORT", 8000))
 
